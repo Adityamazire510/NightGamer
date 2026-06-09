@@ -4182,6 +4182,36 @@ footer {
   .fr {
     grid-template-columns: 1fr;
   }
+
+  /* Modal Mobile compatibility */
+  .modal {
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    top: 0;
+    left: 0;
+    transform: translate(0, 0) scale(1);
+    border: none;
+  }
+  .movl.open .modal {
+    transform: translate(0, 0) scale(1);
+  }
+  .mbody {
+    padding: 1.25rem;
+  }
+  .mtit {
+    font-size: 1.8rem;
+  }
+  .mmgrid {
+    grid-template-columns: 1fr;
+  }
+  .mprrow {
+    flex-wrap: wrap;
+    gap: .5rem;
+  }
+  .mpr {
+    font-size: 2rem;
+  }
 }
 
 @media (max-width: 400px) {
