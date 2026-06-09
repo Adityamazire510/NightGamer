@@ -942,6 +942,76 @@ function getYouTubeEmbedUrl(url) {
   return `https://www.youtube.com/embed/${videoId}`;
 }
 
+let currentGalleryGame = null;
+
+function initModalGallery(g) {
+  currentGalleryGame = g;
+  const viewport = document.getElementById('mmedia-viewport');
+  const thumbs = document.getElementById('mmedia-thumbs');
+  if (!viewport || !thumbs) return;
+
+  let thumbsHTML = '';
+  
+  // 1. Video Thumbnail (if video exists)
+  if (g.video) {
+    thumbsHTML += `
+      <div class="msc-thumb active" onclick="setModalMedia('video', '${g.video}', this)" title="Watch Trailer">
+        <img class="msc" src="${g.img}" onerror="this.style.background='#020408'">
+        <div class="thumb-play-overlay">▶</div>
+      </div>
+    `;
+  }
+
+  // 2. Screenshot Thumbnails
+  if (g.screens && g.screens.length) {
+    g.screens.forEach((s, idx) => {
+      const isActive = !g.video && idx === 0;
+      thumbsHTML += `
+        <div class="msc-thumb${isActive ? ' active' : ''}" onclick="setModalMedia('image', '${s}', this)" title="View Screenshot">
+          <img class="msc" src="${s}" loading="lazy" onerror="this.style.display='none'">
+        </div>
+      `;
+    });
+  }
+
+  thumbs.innerHTML = thumbsHTML;
+
+  // Set initial active media (no autoplay on initial load)
+  if (g.video) {
+    setModalMedia('video', g.video, null, false);
+  } else if (g.screens && g.screens.length) {
+    setModalMedia('image', g.screens[0], null, false);
+  } else {
+    const galleryEl = document.querySelector('.mmedia-gallery');
+    if (galleryEl) galleryEl.style.display = 'none';
+  }
+}
+
+function setModalMedia(type, url, thumbEl, autoplay = true) {
+  const viewport = document.getElementById('mmedia-viewport');
+  if (!viewport) return;
+
+  if (type === 'video') {
+    const autoplayParam = autoplay ? '?autoplay=1' : '';
+    viewport.innerHTML = `
+      <div class="mvideo-container" style="margin-bottom:0; box-shadow:none; border:none;">
+        <iframe src="${getYouTubeEmbedUrl(url)}${autoplayParam}" title="Gameplay Trailer" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+      </div>
+    `;
+  } else {
+    viewport.innerHTML = `
+      <div class="mimage-viewport-container">
+        <img class="mviewport-img" src="${url}" alt="Screenshot" onerror="this.src='${currentGalleryGame?.img}'">
+      </div>
+    `;
+  }
+
+  if (thumbEl) {
+    document.querySelectorAll('#mmedia-thumbs .msc-thumb').forEach(t => t.classList.remove('active'));
+    thumbEl.classList.add('active');
+  }
+}
+
 /* ═══════════════ GAME DETAIL MODAL ═══════════════ */
 function openModal(id) {
   const g = GAMES.find(x => x.id === id);
@@ -952,6 +1022,7 @@ function openModal(id) {
   inner.innerHTML = `
     <div class="mi">
       <div class="mcw">
+        <div class="mcover-bg" style="background-image: url('${g.img}');"></div>
         <img class="mcover" src="${g.img}" alt="${g.title}" onerror="this.style.background='#020408'">
         <button class="mcls" onclick="closeMod()">✕</button>
       </div>
@@ -964,15 +1035,11 @@ function openModal(id) {
           <span class="mrn">${g.rating}/5 · ${g.rev.toLocaleString()} reviews</span>
         </div>
         <p class="mdesc">${g.desc}</p>
-        ${g.video ? `
-        <div class="mvideo-sec" style="margin-bottom: 1.5rem;">
-          <div class="mreqt">// GAMEPLAY TRAILER</div>
-          <div class="mvideo-container">
-            <iframe src="${getYouTubeEmbedUrl(g.video)}" title="${g.title} Trailer" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-          </div>
+        <div class="mmedia-gallery" style="margin-bottom: 1.5rem;">
+          <div class="mreqt">// MEDIA GALLERY</div>
+          <div id="mmedia-viewport" class="mviewport-container"></div>
+          <div class="mscrow" id="mmedia-thumbs"></div>
         </div>
-        ` : ''}
-        ${g.screens.length ? `<div class="mscrow">${g.screens.map(s => `<img class="msc" src="${s}" loading="lazy" onerror="this.style.display='none'">`).join('')}</div>` : ''}
         <div class="mmgrid">
           <div class="mmi"><div class="mmil">Discs</div><div class="mmiv">💿 ${g.discs}</div></div>
           <div class="mmi"><div class="mmil">Install Size</div><div class="mmiv">💾 ${g.size}</div></div>
@@ -993,6 +1060,7 @@ function openModal(id) {
     </div>`;
   document.getElementById('movl').classList.add('open');
   document.body.style.overflow = 'hidden';
+  initModalGallery(g);
 }
 
 function closeMod(e) {
@@ -1541,6 +1609,8 @@ window.removeFromCart = removeFromCart;
 window.openModal = openModal;
 window.closeMod = closeMod;
 window.openCart = openCart;
+window.setModalMedia = setModalMedia;
+window.initModalGallery = initModalGallery;
 window.closeCart = closeCart;
 window.openPay = openPay;
 window.closePay = closePay;
