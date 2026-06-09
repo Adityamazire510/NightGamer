@@ -18,8 +18,8 @@ try {
         $request = $context.Request
         $response = $context.Response
         
-        $rawUrl = $request.RawUrl
-        $path = $rawUrl.Split('?')[0] # remove query params
+        $rawPath = $request.RawUrl.Split('?')[0] # remove query params
+        $path = [Uri]::UnescapeDataString($rawPath)
         
         if ($path -eq "/") {
             $path = "/index.html"
