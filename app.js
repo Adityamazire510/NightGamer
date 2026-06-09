@@ -46,8 +46,12 @@ const GAMES = [
   },
   {
     id: 4, title: 'ELDEN RING', dev: 'FromSoftware', pub: 'Bandai Namco', genre: 'rpg', year: 2022, price: 2499, orig: 2999, rating: 4.9, rev: 52000, badge: 'hot',
-    img: 'https://media.rawg.io/media/games/b54/b54598d1d5cc31899f4f0a7e3122a7b0.jpg',
-    screens: ['https://media.rawg.io/media/screenshots/0c0/0c0af4f8e8e1c17e53c14b4c6f7ea3ac.jpg', 'https://media.rawg.io/media/screenshots/e98/e985e45a05aae89e89a3a6e91fa2bbef.jpg'],
+    img: 'Images/Elden Ring/cover.jpg',
+    screens: [
+      'Images/Elden Ring/screenshot1.jpg',
+      'Images/Elden Ring/screenshot2.jpg'
+    ],
+    video: 'https://youtu.be/qqiC88f9ogU',
     desc: "THE masterpiece of the decade. George R.R. Martin co-wrote the lore. FromSoftware built the world. Face demigods, discover secrets, and shape your own legend in the breathtaking Lands Between. GOTY 2022.",
     discs: '2 Discs', size: '60 GB', players: '1 Player + Online Co-op',
     tags: ['Action RPG', 'Open World', 'Difficult', 'Fantasy', 'GOTY'],
