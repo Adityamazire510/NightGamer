@@ -15,7 +15,7 @@ const GAMES = [
     id: 1, title: 'CALL OF DUTY: MW III', dev: 'Infinity Ward', pub: 'Activision', genre: 'fps', year: 2023, price: 3499, orig: 4499, rating: 4.6, rev: 18420, badge: 'hot',
     img: 'Images/Call of Duty Modern Warfare III/Store_GamesPDP_Hero01.png',
     screens: [
-      'Images/Call of Duty Modern Warfare III/Store_GamesPDP_Hero_Secondary02.png',
+      'Images/Call of Duty Modern Warfare III/Store_GamesPDP_Hero_Secondary02.jpg',
       'Images/Call of Duty Modern Warfare III/Store_GamesPDP_Hero_Secondary03.png',
       'Images/Call of Duty Modern Warfare III/Store_GamesPDP_Hero_Secondary04.png',
       'Images/Call of Duty Modern Warfare III/Store_GamesPDP_Hero_Secondary05.png'
