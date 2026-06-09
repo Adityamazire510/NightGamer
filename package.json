@@ -1,0 +1,23 @@
+{
+  "name": "nightgamers-store",
+  "version": "1.0.0",
+  "description": "NightGamers — Physical PC Game Store",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "gaming",
+    "pc",
+    "store",
+    "physical-cd",
+    "spa"
+  ],
+  "author": "Aditya Mazire",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}

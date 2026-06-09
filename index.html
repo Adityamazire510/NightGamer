@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NightGamers — Physical PC Game Store</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="covl" id="covl" onclick="closeCart()"></div>
+  
+  <!-- GAME DETAIL MODAL -->
+  <div class="movl" id="movl" onclick="closeMod(event)">
+    <div class="modal" id="modal" onclick="event.stopPropagation()">
+      <div id="modal-inner"></div>
+    </div>
+  </div>
+
+  <!-- PAYMENT MODAL -->
+  <div class="pmovl" id="pmovl" onclick="closePay(event)">
+    <div class="pmod" id="pmod" onclick="event.stopPropagation()">
+      <div class="ph"><h3>CHECKOUT</h3><button class="pcls" onclick="closePay()">✕</button></div>
+      <div class="pb" id="pb"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <div id="tOvl"></div>
+
+  <!-- CART -->
+  <div class="cart-d" id="cart-d">
+    <div class="cart-h"><h3>YOUR CART</h3><button class="ccls" onclick="closeCart()">✕</button></div>
+    <div class="cart-items" id="cart-items"><div class="ce"><span class="ce-i">💿</span><p>YOUR CART IS EMPTY</p></div></div>
+    <div class="cart-f"><div class="ctr"><span class="ctl">Total</span><span class="ctv" id="ctv">₹0</span></div><button class="chk" onclick="openPay()">PROCEED TO CHECKOUT →</button></div>
+  </div>
+
+  <!-- AUTH OVERLAY -->
+  <div class="auth-ovl" id="auth-ovl">
+    <div class="auth-backdrop" onclick="closeAuth()"></div>
+    <div class="auth-particles" id="auth-particles"></div>
+    <div class="auth-card">
+      <button class="auth-close" onclick="closeAuth()">✕</button>
+      <div style="background:var(--surf);border:1px solid var(--br);border-bottom:none">
+        <div class="auth-top">
+          <div class="auth-logo">
+            <svg class="auth-logo-mark" viewBox="0 0 40 40"><use href="#ng-mark"/></svg>
+            <span class="auth-logo-text">NIGHTGAMERS</span>
+          </div>
+          <div class="auth-tagline">Sign in to your account</div>
+          <div class="auth-tabs">
+            <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Login</button>
+            <button class="auth-tab" id="tab-register" onclick="switchTab('register')">Register</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- OAuth loading screen -->
+      <div class="auth-body" id="oauth-loading-screen" style="display:none">
+        <div class="oauth-loading" style="display:flex">
+          <div class="oauth-spinner"></div>
+          <div class="oauth-msg" id="oauth-msg">Connecting to Google...</div>
+          <p style="font-size:.8rem;color:var(--tx2);margin-top:.75rem;font-family:'Rajdhani',sans-serif">You will be redirected shortly</p>
+        </div>
+      </div>
+      
+      <!-- Login form -->
+      <div class="auth-body" id="auth-login-body">
+        <button class="social-auth-btn google-btn" onclick="oauthLogin('google')">
+          <span class="social-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg></span>
+          Continue with Google
+        </button>
+        <button class="social-auth-btn outlook-btn" onclick="oauthLogin('outlook')">
+          <span class="social-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M7.462 0H0v7.19l3.075 1.77L7.462 6.4V0z" fill="#1976D2"/><path d="M7.462 0h8.615v3.662H7.462V0z" fill="#1565C0"/><path d="M16.077 0H24v7.19l-7.923 1.016V0z" fill="#1E88E5"/><path d="M0 7.19h7.462v4.038L0 12.381V7.19z" fill="#1E88E5"/><path d="M16.077 7.19H24v4.038l-7.923 1.153V7.19z" fill="#1976D2"/><path d="M7.462 7.19h8.615v4.577l-8.615-.246V7.19z" fill="#2196F3"/><path d="M0 12.381h7.462V18.1H0v-5.719z" fill="#1565C0"/><path d="M7.462 11.52h8.615l.923.87-9.538.61V11.52z" fill="#1976D2"/><path d="M7.462 13H24v4l-16.538 3V13z" fill="#42A5F5"/><path d="M0 18.1h7.462V24H0v-5.9z" fill="#1E88E5"/><path d="M7.462 20h16.077l.461-2H7.462v2z" fill="#1565C0"/><path d="M7.462 24H24V20H7.462v4z" fill="#1976D2"/></svg></span>
+          Continue with Outlook / Microsoft
+        </button>
+        <button class="social-auth-btn github-btn" onclick="oauthLogin('github')">
+          <span class="social-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg></span>
+          Continue with GitHub
+        </button>
+        <div class="or-divider">or sign in with email</div>
+        <div class="auth-err" id="login-err"></div>
+        <div class="auth-fg"><label class="auth-fl">Email Address</label><input class="auth-in" id="li-email" type="email" placeholder="you@example.com"></div>
+        <div class="auth-fg"><label class="auth-fl">Password</label><input class="auth-in" id="li-pw" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+        <button class="auth-submit" onclick="doLogin()">SIGN IN →</button>
+        <div class="auth-foot">No account? <span onclick="switchTab('register')">Create one free</span></div>
+      </div>
+      
+      <!-- Register form -->
+      <div class="auth-body" id="auth-register-body" style="display:none">
+        <button class="social-auth-btn google-btn" onclick="oauthLogin('google')">
+          <span class="social-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg></span>
+          Sign up with Google
+        </button>
+        <button class="social-auth-btn outlook-btn" onclick="oauthLogin('outlook')">
+          <span class="social-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M7.462 0H0v7.19l3.075 1.77L7.462 6.4V0z" fill="#1976D2"/><path d="M7.462 0h8.615v3.662H7.462V0z" fill="#1565C0"/><path d="M16.077 0H24v7.19l-7.923 1.016V0z" fill="#1E88E5"/><path d="M0 7.19h7.462v4.038L0 12.381V7.19z" fill="#1E88E5"/><path d="M16.077 7.19H24v4.038l-7.923 1.153V7.19z" fill="#1976D2"/><path d="M7.462 7.19h8.615v4.577l-8.615-.246V7.19z" fill="#2196F3"/><path d="M0 12.381h7.462V18.1H0v-5.719z" fill="#1565C0"/><path d="M7.462 11.52h8.615l.923.87-9.538.61V11.52z" fill="#1976D2"/><path d="M7.462 13H24v4l-16.538 3V13z" fill="#42A5F5"/><path d="M0 18.1h7.462V24H0v-5.9z" fill="#1E88E5"/><path d="M7.462 20h16.077l.461-2H7.462v2z" fill="#1565C0"/><path d="M7.462 24H24V20H7.462v4z" fill="#1976D2"/></svg></span>
+          Sign up with Microsoft
+        </button>
+        <div class="or-divider">or create with email</div>
+        <div class="auth-err" id="reg-err"></div>
+        <div class="auth-fg"><label class="auth-fl">Full Name</label><input class="auth-in" id="rg-name" placeholder="Rahul Sharma"></div>
+        <div class="auth-fg"><label class="auth-fl">Email Address</label><input class="auth-in" id="rg-email" type="email" placeholder="you@example.com"></div>
+        <div class="auth-fg"><label class="auth-fl">Password</label><input class="auth-in" id="rg-pw" type="password" placeholder="Min. 6 characters" onkeydown="if(event.key==='Enter')doRegister()"></div>
+        <button class="auth-submit" onclick="doRegister()">CREATE ACCOUNT →</button>
+        <div class="auth-foot">Already have an account? <span onclick="switchTab('login')">Sign in</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WELCOME TOAST -->
+  <div class="welcome-toast" id="welcome-toast">
+    <div class="wt-av" id="wt-av"></div>
+    <div class="wt-info"><div class="wt-name" id="wt-name"></div><div class="wt-sub">Signed in successfully</div></div>
+  </div>
+
+  <!-- SVG LOGO MARK (reused everywhere) -->
+  <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <symbol id="ng-mark" viewBox="0 0 40 40">
+        <!-- Moon crescent -->
+        <path d="M20 4 C10 4 4 11 4 20 C4 29 10 36 20 36 C14 33 10 27 10 20 C10 13 14 7 20 4Z" fill="url(#moon-fill)" opacity="0.9"/>
+        <!-- Controller body -->
+        <rect x="11" y="16" width="18" height="12" rx="4" fill="url(#ctrl-fill)"/>
+        <!-- D-pad left nub -->
+        <rect x="13" y="20" width="5" height="2" rx="1" fill="rgba(255,255,255,0.4)"/>
+        <rect x="15" y="18" width="2" height="5" rx="1" fill="rgba(255,255,255,0.4)" style="transform:none"/>
+        <!-- ABXY dots -->
+        <circle cx="27" cy="19.5" r="1.2" fill="#ff2d78" opacity="0.9"/>
+        <circle cx="29.2" cy="21.5" r="1.2" fill="#a78bfa" opacity="0.9"/>
+        <circle cx="27" cy="23.5" r="1.2" fill="#00e5ff" opacity="0.9"/>
+        <circle cx="24.8" cy="21.5" r="1.2" fill="#00ff88" opacity="0.9"/>
+        <!-- Stars around -->
+        <circle cx="33" cy="8" r="1.2" fill="#a78bfa" opacity="0.8"/>
+        <circle cx="28" cy="6" r="0.8" fill="#00e5ff" opacity="0.6"/>
+        <circle cx="35" cy="14" r="0.7" fill="#ff2d78" opacity="0.7"/>
+        <!-- Gradient defs -->
+        <defs>
+          <linearGradient id="moon-fill" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#a78bfa"/>
+            <stop offset="100%" stop-color="#6d28d9"/>
+          </linearGradient>
+          <linearGradient id="ctrl-fill" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#1e1040"/>
+            <stop offset="100%" stop-color="#0d1526"/>
+          </linearGradient>
+        </defs>
+      </symbol>
+    </defs>
+  </svg>
+
+  <!-- PROFILE PANEL -->
+  <div class="prof-ovl" id="prof-ovl">
+    <div class="prof-backdrop" onclick="closeProfile()"></div>
+    <div class="prof-panel" id="prof-panel">
+      <div class="prof-header">
+        <div class="prof-header-l">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          <span class="prof-header-title">MY PROFILE</span>
+        </div>
+        <button class="prof-close" onclick="closeProfile()">✕</button>
+      </div>
+      <div class="prof-tabs">
+        <button class="prof-tab active" id="ptab-overview" onclick="switchProfTab('overview')">Overview</button>
+        <button class="prof-tab" id="ptab-edit" onclick="switchProfTab('edit')">Edit Profile</button>
+        <button class="prof-tab" id="ptab-security" onclick="switchProfTab('security')">Security</button>
+        <button class="prof-tab" id="ptab-notifications" onclick="switchProfTab('notifications')">Notifications</button>
+      </div>
+      <div class="prof-body" id="prof-body"></div>
+      <div class="prof-save-bar" id="prof-save-bar" style="display:none">
+        <button class="prof-discard-btn" onclick="discardProfileChanges()">DISCARD</button>
+        <button class="prof-save-btn" onclick="saveProfile()">SAVE CHANGES →</button>
+        <span class="prof-save-status" id="prof-save-status">✓ SAVED</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- REVIEW NOTIFICATION -->
+  <div class="rev-new-notif" id="rev-notif">
+    <div class="rev-notif-av" id="rev-notif-av"></div>
+    <div>
+      <div class="rev-notif-title" id="rev-notif-title"></div>
+      <div class="rev-notif-text" id="rev-notif-text"></div>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <nav>
+    <span class="logo" onclick="goHome()">
+      <svg class="logo-mark" viewBox="0 0 40 40"><use href="#ng-mark"/></svg>
+      <span class="logo-text">
+        <span class="logo-main">NIGHTGAMERS</span>
+        <span class="logo-sub">PC · Physical · Since 2020</span>
+      </span>
+    </span>
+    <ul>
+      <li><a onclick="goHome()" id="nav-home" class="active">Store</a></li>
+      <li><a onclick="goHome();setTimeout(()=>document.getElementById('gen-sec').scrollIntoView({behavior:'smooth'}),120)">Genres</a></li>
+      <li><a onclick="goHome();setTimeout(()=>document.getElementById('how-sec').scrollIntoView({behavior:'smooth'}),120)">How It Works</a></li>
+      <li><a onclick="goHome();setTimeout(()=>document.getElementById('footer').scrollIntoView({behavior:'smooth'}),120)">Support</a></li>
+    </ul>
+    <div class="nav-r">
+      <div id="nav-auth-area">
+        <button class="login-btn" onclick="openAuth()">SIGN IN</button>
+      </div>
+      <button class="cart-btn" onclick="openCart()">🛒 CART<span class="cn" id="cn" style="display:none">0</span></button>
+      <button class="hburg" onclick="toggleMob()"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="mobn" id="mobn">
+    <a onclick="goHome();toggleMob()">Store</a>
+    <a onclick="goHome();toggleMob();setTimeout(()=>document.getElementById('gen-sec').scrollIntoView({behavior:'smooth'}),120)">Genres</a>
+    <a onclick="goHome();toggleMob();setTimeout(()=>document.getElementById('how-sec').scrollIntoView({behavior:'smooth'}),120)">How It Works</a>
+  </div>
+
+  <div id="app">
+    <!-- HOME PAGE -->
+    <div class="page active" id="page-home" style="display:block">
+      <section class="hero">
+        <div class="hero-bg"></div>
+        <div class="hero-c">
+          <div class="htag">Physical CD Collection</div>
+          <h1>OWN YOUR<br><span class="hl">GAME</span><br>FOREVER</h1>
+          <p>Premium PC game CDs delivered to your door. No subscriptions, no always-online DRM — just games you truly own.</p>
+          <div class="hcta">
+            <span class="bp" onclick="document.getElementById('gen-sec').scrollIntoView({behavior:'smooth'})">Browse Genres</span>
+            <span class="bo" onclick="document.getElementById('feat-sec').scrollIntoView({behavior:'smooth'})">Featured Title</span>
+          </div>
+        </div>
+        <div class="hero-vis"><div class="cd"><div class="cd-r"></div><div class="cd-r"></div><div class="cd-r"></div><div class="cd-c"></div></div></div>
+      </section>
+
+      <div class="sbar">
+        <div class="si"><div class="sn">500+</div><div class="slb">Titles</div></div>
+        <div class="si"><div class="sn">48H</div><div class="slb">Dispatch</div></div>
+        <div class="si"><div class="sn">4.9★</div><div class="slb">Rating</div></div>
+        <div class="si"><div class="sn">1M+</div><div class="slb">Orders</div></div>
+        <div class="si"><div class="sn">PAN-IN</div><div class="slb">Delivery</div></div>
+      </div>
+
+      <section id="gen-sec">
+        <div class="sh"><div><div class="ss">// Shop by Category</div><div class="st">BROWSE BY <span>GENRE</span></div></div></div>
+        <div class="gg" id="genCards"></div>
+      </section>
+
+      <div class="fsec" id="feat-sec">
+        <div class="sh"><div><div class="ss">// Game of the Month</div><div class="st">FEATURED <span>TITLE</span></div></div></div>
+        <div class="fcard">
+          <div class="fi">
+            <span class="fbdg">● GOTY WINNER</span>
+            <div class="ftit">ELDEN<br><span>RING</span></div>
+            <p class="fdesc">FromSoftware's masterpiece. A vast open world full of peril, mystery and breathtaking beauty awaits in the Lands Between. Face the demigods, shatter the Elden Ring.</p>
+            <div class="fmeta">
+              <div class="fm"><span class="fml">Genre</span><span class="fmv">Action RPG</span></div>
+              <div class="fm"><span class="fml">Developer</span><span class="fmv">FromSoftware</span></div>
+              <div class="fm"><span class="fml">Discs</span><span class="fmv">2-Disc Set</span></div>
+            </div>
+            <div class="fpr">₹2,499</div>
+            <button class="bp" onclick="addToCart(4)">ADD TO CART</button>
+          </div>
+          <div class="fimg"><img src="https://media.rawg.io/media/games/b54/b54598d1d5cc31899f4f0a7e3122a7b0.jpg" alt="Elden Ring" loading="lazy"></div>
+        </div>
+      </div>
+
+      <!-- ── ANIMATED REVIEWS SECTION ── -->
+      <section class="rev-section" id="reviews-sec">
+        <div class="sh">
+          <div><div class="ss">// What Players Are Saying</div><div class="st">PLAYER <span>REVIEWS</span></div></div>
+          <div class="rev-live-badge"><span class="rev-dot"></span>LIVE FEED</div>
+        </div>
+        <!-- marquee row 1 — scrolls left -->
+        <div class="rev-track-wrap rev-mask">
+          <div class="rev-track" id="rev-track-1"></div>
+        </div>
+        <!-- marquee row 2 — scrolls right -->
+        <div class="rev-track-wrap rev-mask" style="margin-top:1.2rem">
+          <div class="rev-track rev-track-rev" id="rev-track-2"></div>
+        </div>
+        <!-- overall rating bar -->
+        <div class="rev-overall" id="rev-overall"></div>
+      </section>
+
+      <section class="how-s" id="how-sec">
+        <div class="sh"><div><div class="ss">// Simple Process</div><div class="st">HOW IT <span>WORKS</span></div></div></div>
+        <div class="stp-g">
+          <div class="stp" style="animation-delay:0s"><div class="stp-n">01</div><span class="stp-i">🔍</span><div class="stp-t">Browse</div><p>Explore 500+ titles across 8 genres — new releases, classics, and bundles.</p></div>
+          <div class="stp" style="animation-delay:.1s"><div class="stp-n">02</div><span class="stp-i">🛒</span><div class="stp-t">Add to Cart</div><p>Select your games. No account needed to browse or buy.</p></div>
+          <div class="stp" style="animation-delay:.2s"><div class="stp-n">03</div><span class="stp-i">💳</span><div class="stp-t">Checkout</div><p>Pay via UPI, cards, net banking, or COD on select orders.</p></div>
+          <div class="stp" style="animation-delay:.3s"><div class="stp-n">04</div><span class="stp-i">📦</span><div class="stp-t">Delivered</div><p>CDs packed and dispatched within 48 hours. Pan-India delivery.</p></div>
+        </div>
+      </section>
+
+    </div>
+    
+    <!-- GENRE PAGE -->
+    <div class="page" id="page-genre"></div>
+  </div>
+
+  <footer id="footer">
+    <div class="fg2">
+      <div class="fbrand">
+        <span class="logo" onclick="goHome()" style="display:inline-flex;margin-bottom:1rem">
+          <svg class="logo-mark" viewBox="0 0 40 40"><use href="#ng-mark"/></svg>
+          <span class="logo-text"><span class="logo-main">NIGHTGAMERS</span><span class="logo-sub">PC · Physical · Since 2020</span></span>
+        </span>
+        <p>India's premier destination for physical PC game CDs. NightGamers — where every gamer finds their next obsession, delivered to your door.</p>
+        <div class="slinks"><a href="#" class="sla">𝕏</a><a href="#" class="sla">f</a><a href="#" class="sla">▶</a><a href="#" class="sla">in</a></div>
+      </div>
+      <div class="fc"><h4>Genres</h4><ul id="footGenre"></ul></div>
+      <div class="fc"><h4>Store</h4><ul><li><a>New Releases</a></li><li><a>Best Sellers</a></li><li><a>On Sale</a></li><li><a>Pre-Orders</a></li></ul></div>
+      <div class="fc"><h4>Help</h4><ul><li><a>Track Order</a></li><li><a>Returns</a></li><li><a>FAQ</a></li><li><a>Contact Us</a></li></ul></div>
+    </div>
+    <div class="fbot"><p>© 2025 NightGamers — All Rights Reserved</p><div class="pics"><span class="pic">UPI</span><span class="pic">VISA</span><span class="pic">MC</span><span class="pic">COD</span><span class="pic">EMI</span></div></div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
