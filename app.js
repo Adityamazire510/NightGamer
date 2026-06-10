@@ -28,8 +28,8 @@ const GAMES = [
   },
   {
     id: 2, title: 'DOOM ETERNAL', dev: 'id Software', pub: 'Bethesda Softworks', genre: 'fps', year: 2020, price: 1299, orig: 1999, rating: 4.8, rev: 9870, badge: 'sale',
-    img: 'https://media.rawg.io/media/games/3ea/3ea3c9bbd940b6cb7f2139e42d3d443f.jpg',
-    screens: ['https://media.rawg.io/media/screenshots/1e7/1e7d4a7cfe79d5c68e4e3bab17dfa5f5.jpg'],
+    img: 'Images/DOOM ETERNAL/cover.jpg',
+    screens: ['Images/DOOM ETERNAL/screenshot1.jpg'],
     video: 'https://youtu.be/_UuktemkCFI?si=eBwoCbf8aXWeShuL',
     desc: "Hell's armies have invaded Earth. Become the Slayer in an epic single-player campaign to conquer demons across dimensions. Push-forward combat at its absolute finest — never stop moving.",
     discs: '2 Discs', size: '50 GB', players: '1 Player + Battlemode',
@@ -38,7 +38,7 @@ const GAMES = [
   },
   {
     id: 3, title: 'COUNTER-STRIKE 2', dev: 'Valve', pub: 'Valve', genre: 'fps', year: 2023, price: 999, orig: null, rating: 4.5, rev: 45000, badge: 'new',
-    img: 'Images/COUNTER-STRIKE 2/cover.jpg',
+    img: 'Images/COUNTER-STRIKE 2/cover.png',
     screens: ['Images/COUNTER-STRIKE 2/screenshot1.jpg'],
     desc: 'CS2 marks a new era for the world\'s defining competitive shooter. Rebuilt with the Source 2 engine — sub-tick architecture, responsive smokes, and a complete audio and visual overhaul.',
     discs: '1 Disc', size: '35 GB', players: '5v5 Competitive',
