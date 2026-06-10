@@ -27,6 +27,13 @@ try {
         
         $localPath = Join-Path (Get-Location) $path.TrimStart('/')
         
+        if (-not (Test-Path $localPath -PathType Leaf)) {
+            $publicPath = Join-Path (Get-Location) "public\$($path.TrimStart('/'))"
+            if (Test-Path $publicPath -PathType Leaf) {
+                $localPath = $publicPath
+            }
+        }
+        
         if (Test-Path $localPath -PathType Leaf) {
             $extension = [System.IO.Path]::GetExtension($localPath).ToLower()
             $contentType = switch ($extension) {
