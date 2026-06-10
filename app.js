@@ -65,7 +65,13 @@ const GAMES = [
   {
     id: 5, title: 'THE WITCHER 3', dev: 'CD Projekt Red', pub: 'CD Projekt', genre: 'rpg', year: 2015, price: 799, orig: 1599, rating: 4.9, rev: 62100, badge: 'sale',
     img: 'Images/THE WITCHER 3/cover.jpg',
-    screens: ['Images/THE WITCHER 3/screenshot1.jpg'],
+    screens: [
+      'Images/THE WITCHER 3/screenshot1.jpg',
+      'Images/THE WITCHER 3/screenshot2.jpg',
+      'Images/THE WITCHER 3/screenshot3.jpg',
+      'Images/THE WITCHER 3/screenshot4.jpg',
+      'Images/THE WITCHER 3/screenshot5.jpg'
+    ],
     video: 'https://youtu.be/XHrskkHf958?si=lcCUdd9uzKuJBX_m',
     desc: 'One of the greatest games ever made. As Geralt of Rivia, hunt monsters in a vast morally grey open world full of meaningful choices, unforgettable characters, and some of the best storytelling in gaming history.',
     discs: '2 Discs', size: '50 GB', players: '1 Player',
