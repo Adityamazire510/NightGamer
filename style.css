@@ -1118,6 +1118,61 @@ section {
   object-fit: cover;
 }
 
+/* Video Embed Placeholder (Performance Optimization) */
+.mvideo-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  background: #000;
+  overflow: hidden;
+}
+
+.mvideo-placeholder img {
+  filter: brightness(0.6);
+  transition: filter 0.3s ease, transform 0.5s ease;
+}
+
+.mvideo-placeholder:hover img {
+  filter: brightness(0.7) scale(1.03);
+}
+
+.mvideo-play-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 68px;
+  height: 68px;
+  background: rgba(0, 229, 255, 0.15);
+  border: 2px solid #00e5ff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #00e5ff;
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+  backdrop-filter: blur(4px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.mvideo-play-btn svg {
+  width: 28px;
+  height: 28px;
+  margin-left: 4px;
+}
+
+.mvideo-placeholder:hover .mvideo-play-btn {
+  background: rgba(0, 229, 255, 0.35);
+  transform: translate(-50%, -50%) scale(1.12);
+  box-shadow: 0 0 35px rgba(0, 229, 255, 0.8), inset 0 0 10px rgba(0, 229, 255, 0.5);
+  color: #fff;
+  border-color: #fff;
+}
+
 .msc-thumb {
   position: relative;
   cursor: pointer;

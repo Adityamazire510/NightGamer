@@ -29,7 +29,10 @@ const GAMES = [
   {
     id: 2, title: 'DOOM ETERNAL', dev: 'id Software', pub: 'Bethesda Softworks', genre: 'fps', year: 2020, price: 1299, orig: 1999, rating: 4.8, rev: 9870, badge: 'sale',
     img: 'Images/DOOM ETERNAL/cover.jpg',
-    screens: ['Images/DOOM ETERNAL/screenshot1.jpg'],
+    screens: [
+      'Images/DOOM ETERNAL/screenshot1.jpg',
+      'Images/DOOM ETERNAL/screenshot2.jpg'
+    ],
     video: 'https://youtu.be/_UuktemkCFI?si=eBwoCbf8aXWeShuL',
     desc: "Hell's armies have invaded Earth. Become the Slayer in an epic single-player campaign to conquer demons across dimensions. Push-forward combat at its absolute finest — never stop moving.",
     discs: '2 Discs', size: '50 GB', players: '1 Player + Battlemode',
@@ -40,6 +43,7 @@ const GAMES = [
     id: 3, title: 'COUNTER-STRIKE 2', dev: 'Valve', pub: 'Valve', genre: 'fps', year: 2023, price: 999, orig: null, rating: 4.5, rev: 45000, badge: 'new',
     img: 'Images/COUNTER-STRIKE 2/cover.png',
     screens: ['Images/COUNTER-STRIKE 2/screenshot1.jpg'],
+    video: 'https://youtu.be/c80dVYcL69E?si=YtLmKZoyNP-P3TFT',
     desc: 'CS2 marks a new era for the world\'s defining competitive shooter. Rebuilt with the Source 2 engine — sub-tick architecture, responsive smokes, and a complete audio and visual overhaul.',
     discs: '1 Disc', size: '35 GB', players: '5v5 Competitive',
     tags: ['Tactical', 'Competitive', 'Multiplayer', 'eSports', 'Free-to-play'],
@@ -804,6 +808,10 @@ function startReviewNotifLoop() {
 
 /* ═══════════════ INIT ═══════════════ */
 function init() {
+  if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+  }
+  window.scrollTo(0, 0);
   renderGenreCards();
   renderFooterGenres();
   updateNavAuth();
@@ -982,9 +990,9 @@ function initModalGallery(g) {
 
   thumbs.innerHTML = thumbsHTML;
 
-  // Set initial active media (no autoplay on initial load)
+  // Set initial active media (show video placeholder cover instead of loading heavy iframe immediately)
   if (g.video) {
-    setModalMedia('video', g.video, null, false);
+    setModalMedia('video-placeholder', g.video, null, false);
   } else if (g.screens && g.screens.length) {
     setModalMedia('image', g.screens[0], null, false);
   } else {
@@ -997,7 +1005,16 @@ function setModalMedia(type, url, thumbEl, autoplay = true) {
   const viewport = document.getElementById('mmedia-viewport');
   if (!viewport) return;
 
-  if (type === 'video') {
+  if (type === 'video-placeholder') {
+    viewport.innerHTML = `
+      <div class="mvideo-placeholder" onclick="setModalMedia('video', '${url}', null, true)" title="Play Trailer">
+        <img class="mviewport-img" src="${currentGalleryGame?.img}" alt="Play Trailer" onerror="this.style.background='#020408'">
+        <div class="mvideo-play-btn">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>
+        </div>
+      </div>
+    `;
+  } else if (type === 'video') {
     const autoplayParam = autoplay ? '?autoplay=1' : '';
     viewport.innerHTML = `
       <div class="mvideo-container" style="margin-bottom:0; box-shadow:none; border:none;">
