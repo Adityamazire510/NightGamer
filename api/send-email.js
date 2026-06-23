@@ -36,7 +36,7 @@ module.exports = async (req, res) => {
           <div style="text-align: left;">
             <div style="color: #ffffff; font-weight: bold; font-size: 15px;">${item.title}</div>
             <div style="color: #8892b0; font-size: 12px; text-transform: uppercase; margin-top: 3px;">${item.genre || ''} · PC GAME CD</div>
-            <div style="color: #00e5ff; font-weight: bold; font-size: 14px; margin-top: 5px;">₹${item.price?.toLocaleString()}</div>
+            <div style="color: #00e5ff; font-weight: bold; font-size: 14px; margin-top: 5px;">&#8377;${item.price?.toLocaleString()}</div>
           </div>
         </div>
       `;
@@ -74,7 +74,7 @@ module.exports = async (req, res) => {
         
         <div style="border-top: 1px solid #1a2233; padding-top: 15px; margin-top: 20px; text-align: right;">
           <span style="color: #8892b0; font-size: 16px; margin-right: 15px;">Grand Total:</span>
-          <span style="color: #00ff88; font-size: 22px; font-weight: bold;">₹${grandTotal?.toLocaleString()}</span>
+          <span style="color: #00ff88; font-size: 22px; font-weight: bold;">&#8377;${grandTotal?.toLocaleString()}</span>
         </div>
         
         <h3 style="color: #ffffff; font-size: 16px; margin-top: 25px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #1a2233; padding-bottom: 8px;">Shipping Address</h3>
