@@ -198,9 +198,10 @@ const GAMES = [
 ];
 
 let cart = JSON.parse(localStorage.getItem('ng_cart') || '[]');
-let orderAddress = JSON.parse(localStorage.getItem('ng_order_address') || 'null') || { name: '', phone: '', address1: '', address2: '', city: '', pin: '', state: '' };
+let orderAddress = JSON.parse(localStorage.getItem('ng_order_address') || 'null') || { name: '', email: '', phone: '', address1: '', address2: '', city: '', pin: '', state: '' };
 let curPage = 'home', transitioning = false, payStep = 1, payMethod = 'upi', selBank = '';
 let payCardNo = '', payCardName = '', payCardExp = '', payCardCvv = '', payUpiId = '', payUpiApp = '';
+let activeOrderId = '';
 
 /* ═══════════════ PROFILE SYSTEM ═══════════════ */
 const AVATAR_COLORS = ['#00e5ff', '#ff2d78', '#7b2fff', '#ffb800', '#00ff88', '#ff6b35', '#e040fb', '#ff1744'];
@@ -1198,13 +1199,14 @@ function selectBank(bank) {
 
 function saveAddrInputs() {
   const n = document.getElementById('pn')?.value.trim() || '';
+  const em = document.getElementById('pemail')?.value.trim() || '';
   const p = document.getElementById('pp')?.value.trim() || '';
   const a1 = document.getElementById('pa1')?.value.trim() || '';
   const a2 = document.getElementById('pa2')?.value.trim() || '';
   const c = document.getElementById('pc')?.value.trim() || '';
   const pin = document.getElementById('ppin')?.value.trim() || '';
   const st = document.getElementById('pst')?.value || '';
-  orderAddress = { name: n, phone: p, address1: a1, address2: a2, city: c, pin: pin, state: st };
+  orderAddress = { name: n, email: em, phone: p, address1: a1, address2: a2, city: c, pin: pin, state: st };
   localStorage.setItem('ng_order_address', JSON.stringify(orderAddress));
 }
 
@@ -1230,6 +1232,7 @@ function openPay() {
   
   if (!orderAddress.name && currentUser) {
     orderAddress.name = currentUser.name;
+    orderAddress.email = currentUser.email;
     const saved = JSON.parse(localStorage.getItem('ng_profile_' + currentUser.id) || '{}');
     if (saved.phone) {
       orderAddress.phone = saved.phone;
@@ -1289,6 +1292,7 @@ function renderPay() {
   } else if (payStep === 2) {
     pb.innerHTML = progHTML(2) + `
       <div class="fg"><label class="fl">Full Name *</label><input class="fin" id="pn" placeholder="Rahul Sharma" value="${orderAddress.name}"></div>
+      <div class="fg"><label class="fl">Email Address *</label><input class="fin" id="pemail" placeholder="rahul@example.com" value="${orderAddress.email || ''}"></div>
       <div class="fg"><label class="fl">Mobile Number *</label><input class="fin" id="pp" placeholder="+91 98765 43210" value="${orderAddress.phone}"></div>
       <div class="fg"><label class="fl">Address Line 1 *</label><input class="fin" id="pa1" placeholder="House No., Street Name" value="${orderAddress.address1}"></div>
       <div class="fg"><label class="fl">Address Line 2</label><input class="fin" id="pa2" placeholder="Colony, Landmark (optional)" value="${orderAddress.address2}"></div>
@@ -1341,7 +1345,7 @@ function renderPay() {
       </div>
       <div class="secbdg">🔒 Secure Checkout · Free Returns within 7 days</div>`;
   } else if (payStep === 5) {
-    const oid = 'NXG' + Date.now().toString(36).toUpperCase();
+    const oid = activeOrderId || ('NXG' + Date.now().toString(36).toUpperCase());
     const pml = { upi: 'UPI Payment', card: 'Card Payment', nb: 'Net Banking', cod: 'Cash on Delivery' };
     pb.innerHTML = `
       <div class="succ">
@@ -1410,6 +1414,7 @@ function setPM(m) {
 
 function valAddr() {
   const n = document.getElementById('pn')?.value.trim();
+  const em = document.getElementById('pemail')?.value.trim();
   const p = document.getElementById('pp')?.value.trim();
   const a1 = document.getElementById('pa1')?.value.trim();
   const a2 = document.getElementById('pa2')?.value.trim();
@@ -1417,9 +1422,14 @@ function valAddr() {
   const pin = document.getElementById('ppin')?.value.trim();
   const st = document.getElementById('pst')?.value;
   
-  if (!n || !p || !a1 || !c || !pin || !st) { 
+  if (!n || !em || !p || !a1 || !c || !pin || !st) { 
     showToast('Please fill all required fields'); 
     return; 
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) {
+    showToast('Please enter a valid email address');
+    return;
   }
   
   if (!/^\+?(\d{1,3})?[-. ]?(\d{10})$/.test(p.replace(/[\s-]/g, ''))) {
@@ -1432,7 +1442,8 @@ function valAddr() {
     return;
   }
 
-  orderAddress = { name: n, phone: p, address1: a1, address2: a2, city: c, pin: pin, state: st };
+  orderAddress = { name: n, email: em, phone: p, address1: a1, address2: a2, city: c, pin: pin, state: st };
+  localStorage.setItem('ng_order_address', JSON.stringify(orderAddress));
   payStep = 3;
   renderPay();
 }
@@ -1492,6 +1503,30 @@ function valPayment() {
 }
 
 function placeOrd() {
+  activeOrderId = 'NXG' + Date.now().toString(36).toUpperCase();
+  
+  const sub = cart.reduce((s, i) => s + i.price, 0);
+  const ship = sub >= 999 ? 0 : 99;
+  const grand = sub + ship;
+  const pml = { upi: 'UPI / QR Code', card: 'Debit / Credit Card', nb: 'Net Banking', cod: 'Cash on Delivery' };
+  
+  const orderDetails = {
+    email: orderAddress.email || 'adityamazire510@gmail.com',
+    name: orderAddress.name || 'Customer',
+    orderId: activeOrderId,
+    grandTotal: grand,
+    items: cart.map(i => ({ title: i.title, price: i.price, img: i.img, genre: i.genre })),
+    address: `${orderAddress.address1}${orderAddress.address2 ? ', ' + orderAddress.address2 : ''}, ${orderAddress.city} - ${orderAddress.pin}, ${orderAddress.state}`,
+    phone: orderAddress.phone,
+    paymentMethod: pml[payMethod]
+  };
+
+  fetch('/api/send-email', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(orderDetails)
+  }).catch(err => console.error('Failed to send order email:', err));
+
   payStep = 5;
   renderPay();
 }

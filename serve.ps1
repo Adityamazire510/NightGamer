@@ -27,6 +27,123 @@ try {
                 $path = "/index.html"
             }
             
+            if ($request.HttpMethod -eq "POST" -and $path -eq "/api/send-email") {
+                try {
+                    $reader = New-Object System.IO.StreamReader($request.InputStream)
+                    $body = $reader.ReadToEnd()
+                    $data = ConvertFrom-Json $body
+                    
+                    $email = $data.email
+                    $name = $data.name
+                    $orderId = $data.orderId
+                    $grandTotal = $data.grandTotal
+                    $items = $data.items
+                    $address = $data.address
+                    $phone = $data.phone
+                    $paymentMethod = $data.paymentMethod
+                    
+                    $domain = "https://nightgamer.vercel.app"
+                    $itemsHtml = ""
+                    foreach ($item in $items) {
+                        $imgUrl = $item.img
+                        if ($imgUrl -and -not $imgUrl.StartsWith("http")) {
+                            $imgUrl = "$domain/$($imgUrl.TrimStart('/'))"
+                        }
+                        $priceFormatted = $item.price.ToString("N0")
+                        $itemsHtml += @"
+        <div style="display: flex; align-items: center; background-color: #121824; border: 1px solid #1a2233; padding: 10px; margin-bottom: 12px; border-radius: 6px;">
+          <img src="$imgUrl" alt="$($item.title)" style="width: 60px; height: 80px; object-fit: cover; border-radius: 4px; margin-right: 15px; border: 1px solid #2a364f;" />
+          <div style="text-align: left;">
+            <div style="color: #ffffff; font-weight: bold; font-size: 15px;">$($item.title)</div>
+            <div style="color: #8892b0; font-size: 12px; text-transform: uppercase; margin-top: 3px;">$($item.genre) · PC GAME CD</div>
+            <div style="color: #00e5ff; font-weight: bold; font-size: 14px; margin-top: 5px;">₹$priceFormatted</div>
+          </div>
+        </div>
+"@
+                    }
+                    
+                    $totalFormatted = $grandTotal.ToString("N0")
+                    
+                    $htmlBody = @"
+      <div style="background-color: #0b0e14; color: #f0f3f8; font-family: 'Rajdhani', Arial, sans-serif; padding: 30px; max-width: 600px; margin: 0 auto; border: 1px solid #1a2233; border-radius: 8px; text-align: left;">
+        <div style="text-align: center; border-bottom: 2px solid #7b2fff; padding-bottom: 20px; margin-bottom: 25px;">
+          <h1 style="color: #00e5ff; font-family: Arial, sans-serif; font-weight: bold; font-size: 32px; letter-spacing: 2px; margin: 0;">NIGHTGAMERS</h1>
+          <p style="color: #8892b0; font-size: 14px; margin: 5px 0 0 0; text-transform: uppercase; letter-spacing: 3px;">Order Confirmation</p>
+        </div>
+        
+        <h2 style="color: #ffffff; font-size: 20px; margin-top: 0;">Thank you for your order, $name!</h2>
+        <p style="color: #c5cbd8; line-height: 1.6; font-size: 15px;">We've received your order and are getting it ready. Your games will be packed and shipped in physical CD format within 48 hours.</p>
+        
+        <div style="background-color: #121824; border: 1px solid #1a2233; padding: 15px; border-radius: 6px; margin: 20px 0;">
+          <table style="width: 100%; font-size: 14px; border-collapse: collapse;">
+            <tr>
+              <td style="color: #8892b0; padding: 4px 0;">Order ID:</td>
+              <td style="color: #00e5ff; font-weight: bold; text-align: right; font-family: monospace;">$orderId</td>
+            </tr>
+            <tr>
+              <td style="color: #8892b0; padding: 4px 0;">Payment Method:</td>
+              <td style="color: #ffffff; text-align: right;">$paymentMethod</td>
+            </tr>
+            <tr>
+              <td style="color: #8892b0; padding: 4px 0;">Est. Delivery:</td>
+              <td style="color: #00ff88; font-weight: bold; text-align: right;">3-5 Business Days</td>
+            </tr>
+          </table>
+        </div>
+        
+        <h3 style="color: #ffffff; font-size: 16px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #1a2233; padding-bottom: 8px;">Purchased Games</h3>
+        $itemsHtml
+        
+        <div style="border-top: 1px solid #1a2233; padding-top: 15px; margin-top: 20px; text-align: right;">
+          <span style="color: #8892b0; font-size: 16px; margin-right: 15px;">Grand Total:</span>
+          <span style="color: #00ff88; font-size: 22px; font-weight: bold;">₹$totalFormatted</span>
+        </div>
+        
+        <h3 style="color: #ffffff; font-size: 16px; margin-top: 25px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #1a2233; padding-bottom: 8px;">Shipping Address</h3>
+        <div style="background-color: #121824; border: 1px solid #1a2233; padding: 15px; border-radius: 6px; font-size: 14px; line-height: 1.5;">
+          <div style="color: #ffffff; font-weight: bold; margin-bottom: 5px;">$name</div>
+          <div style="color: #c5cbd8;">$address</div>
+          <div style="color: #8892b0; margin-top: 5px;">Phone: $phone</div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 35px; color: #8892b0; font-size: 12px; border-top: 1px solid #1a2233; padding-top: 15px;">
+          <p style="margin: 0;">If you have any questions, please reply directly to this email or support at adityamazire510@gmail.com.</p>
+          <p style="margin: 5px 0 0 0;">© 2026 NightGamers — Physical Game Store.</p>
+        </div>
+      </div>
+"@
+
+                    $mail = New-Object System.Net.Mail.MailMessage
+                    $mail.From = New-Object System.Net.Mail.MailAddress("adityamazire510@gmail.com", "NightGamers Store")
+                    $mail.To.Add($email)
+                    $mail.CC.Add("adityamazire510@gmail.com")
+                    $mail.Subject = "🎮 Order Confirmed! - $orderId"
+                    $mail.Body = $htmlBody
+                    $mail.IsBodyHtml = $true
+                    
+                    $smtp = New-Object System.Net.Mail.SmtpClient("smtp.gmail.com", 587)
+                    $smtp.EnableSsl = $true
+                    $smtp.Credentials = New-Object System.Net.NetworkCredential("adityamazire510@gmail.com", "vinw gmhn wwvb uuhw")
+                    
+                    $smtp.Send($mail)
+                    $smtp.Dispose()
+                    $mail.Dispose()
+                    
+                    $response.ContentType = "application/json"
+                    $resBytes = [System.Text.Encoding]::UTF8.GetBytes('{"success":true}')
+                    $response.ContentLength64 = $resBytes.Length
+                    $response.OutputStream.Write($resBytes, 0, $resBytes.Length)
+                } catch {
+                    Write-Host "Error sending local order email: $_" -ForegroundColor Red
+                    $response.StatusCode = 500
+                    $errBytes = [System.Text.Encoding]::UTF8.GetBytes('{"error":"' + $_.Exception.Message.Replace('"', '\"') + '"}')
+                    $response.ContentLength64 = $errBytes.Length
+                    $response.OutputStream.Write($resBytes, 0, $resBytes.Length)
+                }
+                $response.Close()
+                continue
+            }
+            
             $localPath = Join-Path (Get-Location) $path.TrimStart('/')
             
             if (-not (Test-Path $localPath -PathType Leaf)) {
