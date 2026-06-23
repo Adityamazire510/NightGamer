@@ -197,7 +197,10 @@ const GAMES = [
   },
 ];
 
-let cart = [], curPage = 'home', transitioning = false, payStep = 1, payMethod = 'upi', selBank = '';
+let cart = JSON.parse(localStorage.getItem('ng_cart') || '[]');
+let orderAddress = JSON.parse(localStorage.getItem('ng_order_address') || 'null') || { name: '', phone: '', address1: '', address2: '', city: '', pin: '', state: '' };
+let curPage = 'home', transitioning = false, payStep = 1, payMethod = 'upi', selBank = '';
+let payCardNo = '', payCardName = '', payCardExp = '', payCardCvv = '', payUpiId = '', payUpiApp = '';
 
 /* ═══════════════ PROFILE SYSTEM ═══════════════ */
 const AVATAR_COLORS = ['#00e5ff', '#ff2d78', '#7b2fff', '#ffb800', '#00ff88', '#ff6b35', '#e040fb', '#ff1744'];
@@ -822,6 +825,11 @@ function init() {
   renderFooterGenres();
   updateNavAuth();
   initReviews();
+  
+  // Restore cart UI state from localStorage
+  updateCartUI();
+  restoreAddedBtns();
+  renderCartItems();
 }
 
 /* ═══════════════ GENRE CARDS ═══════════════ */
@@ -1107,6 +1115,7 @@ function addToCart(id) {
   const g = GAMES.find(x => x.id === id);
   if (cart.find(c => c.id === id)) { showToast(`${g.title} already in cart!`); return; }
   cart.push(g);
+  localStorage.setItem('ng_cart', JSON.stringify(cart));
   updateCartUI();
   showToast(`✓ ${g.title} added to cart`);
   restoreAddedBtns();
@@ -1115,6 +1124,7 @@ function addToCart(id) {
 
 function removeFromCart(id) {
   cart = cart.filter(c => c.id !== id);
+  localStorage.setItem('ng_cart', JSON.stringify(cart));
   updateCartUI();
   restoreAddedBtns();
   renderCartItems();
@@ -1175,11 +1185,57 @@ function closeCart() {
   document.getElementById('covl').classList.remove('open');
 }
 
+/* ═══════════════ PAYMENT MODAL HELPERS ═══════════════ */
+function changePayStep(step) {
+  payStep = step;
+  renderPay();
+}
+
+function selectBank(bank) {
+  selBank = bank;
+  renderPMF();
+}
+
+function saveAddrInputs() {
+  const n = document.getElementById('pn')?.value.trim() || '';
+  const p = document.getElementById('pp')?.value.trim() || '';
+  const a1 = document.getElementById('pa1')?.value.trim() || '';
+  const a2 = document.getElementById('pa2')?.value.trim() || '';
+  const c = document.getElementById('pc')?.value.trim() || '';
+  const pin = document.getElementById('ppin')?.value.trim() || '';
+  const st = document.getElementById('pst')?.value || '';
+  orderAddress = { name: n, phone: p, address1: a1, address2: a2, city: c, pin: pin, state: st };
+  localStorage.setItem('ng_order_address', JSON.stringify(orderAddress));
+}
+
+function savePaymentInputs() {
+  if (payMethod === 'upi') {
+    payUpiId = document.getElementById('pupi')?.value.trim() || '';
+    const selAppEl = document.querySelector('.uapp.sel');
+    payUpiApp = selAppEl ? selAppEl.textContent.trim() : '';
+  } else if (payMethod === 'card') {
+    payCardNo = document.getElementById('pcard')?.value || '';
+    payCardName = document.getElementById('pcn')?.value || '';
+    payCardExp = document.getElementById('pexp')?.value || '';
+    payCardCvv = document.getElementById('pcvv')?.value || '';
+  }
+}
+
 /* ═══════════════ PAYMENT MODAL ═══════════════ */
 function openPay() {
   if (!cart.length) { showToast('Your cart is empty!'); return; }
   closeCart();
   payStep = 1; payMethod = 'upi'; selBank = '';
+  payCardNo = ''; payCardName = ''; payCardExp = ''; payCardCvv = ''; payUpiId = ''; payUpiApp = '';
+  
+  if (!orderAddress.name && currentUser) {
+    orderAddress.name = currentUser.name;
+    const saved = JSON.parse(localStorage.getItem('ng_profile_' + currentUser.id) || '{}');
+    if (saved.phone) {
+      orderAddress.phone = saved.phone;
+    }
+  }
+  
   renderPay();
   document.getElementById('pmovl').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -1187,6 +1243,11 @@ function openPay() {
 
 function closePay(e) {
   if (e && e.target !== document.getElementById('pmovl')) return;
+  if (payStep === 2) {
+    saveAddrInputs();
+  } else if (payStep === 3) {
+    savePaymentInputs();
+  }
   document.getElementById('pmovl').classList.remove('open');
   document.body.style.overflow = '';
 }
@@ -1224,26 +1285,26 @@ function renderPay() {
   const grand = sub + ship;
 
   if (payStep === 1) {
-    pb.innerHTML = progHTML(1) + summHTML() + `<p class="fhint" style="margin-bottom:.75rem">✅ Free shipping on orders above ₹999 · 7-day returns · Genuine physical discs</p><button class="paynow" onclick="payStep=2;renderPay()">CONTINUE TO ADDRESS →</button><div class="secbdg">🔒 Secure Checkout · PCI DSS Compliant</div>`;
+    pb.innerHTML = progHTML(1) + summHTML() + `<p class="fhint" style="margin-bottom:.75rem">✅ Free shipping on orders above ₹999 · 7-day returns · Genuine physical discs</p><button class="paynow" onclick="changePayStep(2)">CONTINUE TO ADDRESS →</button><div class="secbdg">🔒 Secure Checkout · PCI DSS Compliant</div>`;
   } else if (payStep === 2) {
     pb.innerHTML = progHTML(2) + `
-      <div class="fg"><label class="fl">Full Name *</label><input class="fin" id="pn" placeholder="Rahul Sharma"></div>
-      <div class="fg"><label class="fl">Mobile Number *</label><input class="fin" id="pp" placeholder="+91 98765 43210"></div>
-      <div class="fg"><label class="fl">Address Line 1 *</label><input class="fin" id="pa1" placeholder="House No., Street Name"></div>
-      <div class="fg"><label class="fl">Address Line 2</label><input class="fin" id="pa2" placeholder="Colony, Landmark (optional)"></div>
+      <div class="fg"><label class="fl">Full Name *</label><input class="fin" id="pn" placeholder="Rahul Sharma" value="${orderAddress.name}"></div>
+      <div class="fg"><label class="fl">Mobile Number *</label><input class="fin" id="pp" placeholder="+91 98765 43210" value="${orderAddress.phone}"></div>
+      <div class="fg"><label class="fl">Address Line 1 *</label><input class="fin" id="pa1" placeholder="House No., Street Name" value="${orderAddress.address1}"></div>
+      <div class="fg"><label class="fl">Address Line 2</label><input class="fin" id="pa2" placeholder="Colony, Landmark (optional)" value="${orderAddress.address2}"></div>
       <div class="fr">
-        <div class="fg"><label class="fl">City *</label><input class="fin" id="pc" placeholder="Mumbai"></div>
-        <div class="fg"><label class="fl">PIN Code *</label><input class="fin" id="ppin" placeholder="400001" maxlength="6"></div>
+        <div class="fg"><label class="fl">City *</label><input class="fin" id="pc" placeholder="Mumbai" value="${orderAddress.city}"></div>
+        <div class="fg"><label class="fl">PIN Code *</label><input class="fin" id="ppin" placeholder="400001" maxlength="6" value="${orderAddress.pin}"></div>
       </div>
       <div class="fg">
         <label class="fl">State *</label>
         <select class="fin" id="pst">
           <option value="">Select State</option>
-          ${['Andhra Pradesh', 'Assam', 'Bihar', 'Delhi', 'Goa', 'Gujarat', 'Haryana', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Odisha', 'Punjab', 'Rajasthan', 'Tamil Nadu', 'Telangana', 'Uttar Pradesh', 'West Bengal'].map(s => `<option>${s}</option>`).join('')}
+          ${['Andhra Pradesh', 'Assam', 'Bihar', 'Delhi', 'Goa', 'Gujarat', 'Haryana', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Odisha', 'Punjab', 'Rajasthan', 'Tamil Nadu', 'Telangana', 'Uttar Pradesh', 'West Bengal'].map(s => `<option ${orderAddress.state === s ? 'selected' : ''}>${s}</option>`).join('')}
         </select>
       </div>
       <div style="display:flex;gap:.75rem;margin-top:.5rem">
-        <button class="paynow" style="background:transparent;border:1px solid var(--br);color:var(--tx2);clip-path:none;flex:1;font-size:1rem;padding:14px" onclick="payStep=1;renderPay()">← BACK</button>
+        <button class="paynow" style="background:transparent;border:1px solid var(--br);color:var(--tx2);clip-path:none;flex:1;font-size:1rem;padding:14px" onclick="saveAddrInputs();changePayStep(1)">← BACK</button>
         <button class="paynow" style="flex:2" onclick="valAddr()">CONTINUE →</button>
       </div>`;
   } else if (payStep === 3) {
@@ -1257,14 +1318,14 @@ function renderPay() {
       </div>
       <div id="pmf"></div>
       <div style="display:flex;gap:.75rem">
-        <button class="paynow" style="background:transparent;border:1px solid var(--br);color:var(--tx2);clip-path:none;flex:1;font-size:1rem;padding:14px" onclick="payStep=2;renderPay()">← BACK</button>
-        <button class="paynow" style="flex:2" onclick="payStep=4;renderPay()">REVIEW ORDER →</button>
+        <button class="paynow" style="background:transparent;border:1px solid var(--br);color:var(--tx2);clip-path:none;flex:1;font-size:1rem;padding:14px" onclick="savePaymentInputs();changePayStep(2)">← BACK</button>
+        <button class="paynow" style="flex:2" onclick="valPayment()">REVIEW ORDER →</button>
       </div>
       <div class="secbdg">🔒 256-bit SSL Encrypted · PCI DSS Compliant</div>`;
     renderPMF();
   } else if (payStep === 4) {
-    const nm = document.getElementById('pn')?.value || 'Customer';
-    const addr = `${document.getElementById('pa1')?.value || ''}, ${document.getElementById('pc')?.value || ''} ${document.getElementById('ppin')?.value || ''}`;
+    const nm = orderAddress.name || 'Customer';
+    const addr = `${orderAddress.address1}${orderAddress.address2 ? ', ' + orderAddress.address2 : ''}, ${orderAddress.city} - ${orderAddress.pin}, ${orderAddress.state}`;
     const pml = { upi: 'UPI / QR Code', card: 'Debit / Credit Card', nb: 'Net Banking', cod: 'Cash on Delivery' };
     pb.innerHTML = progHTML(4) + summHTML() + `
       <div class="osumm" style="margin-top:1rem">
@@ -1275,7 +1336,7 @@ function renderPay() {
         <div class="oitem"><span class="oin">Est. Delivery</span><span style="color:#00ff88;font-weight:700">3-5 Business Days</span></div>
       </div>
       <div style="display:flex;gap:.75rem;margin-top:1rem">
-        <button class="paynow" style="background:transparent;border:1px solid var(--br);color:var(--tx2);clip-path:none;flex:1;font-size:1rem;padding:14px" onclick="payStep=3;renderPay()">← BACK</button>
+        <button class="paynow" style="background:transparent;border:1px solid var(--br);color:var(--tx2);clip-path:none;flex:1;font-size:1rem;padding:14px" onclick="changePayStep(3)">← BACK</button>
         <button class="paynow" style="flex:2" onclick="placeOrd()">PLACE ORDER ₹${grand.toLocaleString()} →</button>
       </div>
       <div class="secbdg">🔒 Secure Checkout · Free Returns within 7 days</div>`;
@@ -1304,25 +1365,32 @@ function renderPMF() {
   if (!el) return;
   if (payMethod === 'upi') {
     el.innerHTML = `
-      <div class="fg" style="margin-bottom:.75rem"><label class="fl">UPI ID</label><input class="fin" id="pupi" placeholder="yourname@okaxis"></div>
+      <div class="fg" style="margin-bottom:.75rem">
+        <label class="fl">UPI ID</label>
+        <input class="fin" id="pupi" placeholder="yourname@okaxis" value="${payUpiId}" oninput="document.querySelectorAll('.uapp').forEach(a=>a.classList.remove('sel'))">
+      </div>
       <div class="upiapps">
-        ${[['📱', 'GPay'], ['💜', 'PhonePe'], ['💛', 'Paytm'], ['🔵', 'BHIM'], ['🟠', 'Amazon Pay']].map(([ic, n]) => `<div class="uapp" onclick="document.getElementById('pupi').value='';this.classList.toggle('sel')">${ic} ${n}</div>`).join('')}
+        ${[['📱', 'GPay'], ['💜', 'PhonePe'], ['💛', 'Paytm'], ['🔵', 'BHIM'], ['🟠', 'Amazon Pay']].map(([ic, n]) => {
+          const appText = `${ic} ${n}`;
+          const isSelected = payUpiApp === appText;
+          return `<div class="uapp${isSelected ? ' sel' : ''}" onclick="document.getElementById('pupi').value='';payUpiId='';document.querySelectorAll('.uapp').forEach(a=>a.classList.remove('sel'));this.classList.add('sel');payUpiApp='${appText}'">${ic} ${n}</div>`;
+        }).join('')}
       </div>
       <p class="fhint" style="margin-top:.75rem">Enter your UPI ID or tap an app to receive a payment request on your phone</p>`;
   } else if (payMethod === 'card') {
     el.innerHTML = `
-      <div class="fg"><label class="fl">Card Number</label><input class="fin" id="pcard" placeholder="1234 5678 9012 3456" maxlength="19" oninput="this.value=this.value.replace(/[^0-9]/g,'').replace(/(.{4})/g,'$1 ').trim()"></div>
-      <div class="fg"><label class="fl">Cardholder Name</label><input class="fin" id="pcn" placeholder="RAHUL SHARMA"></div>
+      <div class="fg"><label class="fl">Card Number</label><input class="fin" id="pcard" placeholder="1234 5678 9012 3456" maxlength="19" value="${payCardNo}" oninput="this.value=this.value.replace(/[^0-9]/g,'').replace(/(.{4})/g,'$1 ').trim()"></div>
+      <div class="fg"><label class="fl">Cardholder Name</label><input class="fin" id="pcn" placeholder="RAHUL SHARMA" value="${payCardName}"></div>
       <div class="fr">
-        <div class="fg"><label class="fl">Expiry Date</label><input class="fin" id="pexp" placeholder="MM/YY" maxlength="5"></div>
-        <div class="fg"><label class="fl">CVV</label><input class="fin" id="pcvv" placeholder="•••" maxlength="4" type="password"></div>
+        <div class="fg"><label class="fl">Expiry Date</label><input class="fin" id="pexp" placeholder="MM/YY" maxlength="5" value="${payCardExp}"></div>
+        <div class="fg"><label class="fl">CVV</label><input class="fin" id="pcvv" placeholder="•••" maxlength="4" type="password" value="${payCardCvv}"></div>
       </div>
       <p class="fhint">EMI available on orders above ₹2,000 — 3, 6, 12 month options · No-cost EMI on select cards</p>`;
   } else if (payMethod === 'nb') {
     el.innerHTML = `
       <p class="fhint" style="margin-bottom:.75rem">Select your bank:</p>
       <div class="bkg">
-        ${['SBI', 'HDFC', 'ICICI', 'Axis Bank', 'Kotak', 'PNB', 'Canara', 'IDFC FIRST', 'Yes Bank', 'IndusInd', 'Bank of Baroda', 'UCO Bank'].map(b => `<div class="bkb${selBank === b ? ' sel' : ''}" onclick="selBank='${b}';renderPMF()">${b}</div>`).join('')}
+        ${['SBI', 'HDFC', 'ICICI', 'Axis Bank', 'Kotak', 'PNB', 'Canara', 'IDFC FIRST', 'Yes Bank', 'IndusInd', 'Bank of Baroda', 'UCO Bank'].map(b => `<div class="bkb${selBank === b ? ' sel' : ''}" onclick="selectBank('${b}')">${b}</div>`).join('')}
       </div>`;
   } else if (payMethod === 'cod') {
     el.innerHTML = `
@@ -1335,17 +1403,91 @@ function renderPMF() {
 }
 
 function setPM(m) {
+  savePaymentInputs();
   payMethod = m;
   renderPay();
 }
 
 function valAddr() {
-  const n = document.getElementById('pn')?.value;
-  const a = document.getElementById('pa1')?.value;
-  const c = document.getElementById('pc')?.value;
-  const p = document.getElementById('ppin')?.value;
-  if (!n || !a || !c || !p || p.length < 6) { showToast('Please fill all required fields'); return; }
+  const n = document.getElementById('pn')?.value.trim();
+  const p = document.getElementById('pp')?.value.trim();
+  const a1 = document.getElementById('pa1')?.value.trim();
+  const a2 = document.getElementById('pa2')?.value.trim();
+  const c = document.getElementById('pc')?.value.trim();
+  const pin = document.getElementById('ppin')?.value.trim();
+  const st = document.getElementById('pst')?.value;
+  
+  if (!n || !p || !a1 || !c || !pin || !st) { 
+    showToast('Please fill all required fields'); 
+    return; 
+  }
+  
+  if (!/^\+?(\d{1,3})?[-. ]?(\d{10})$/.test(p.replace(/[\s-]/g, ''))) {
+    showToast('Please enter a valid 10-digit mobile number');
+    return;
+  }
+
+  if (!/^\d{6}$/.test(pin)) {
+    showToast('Please enter a valid 6-digit PIN code');
+    return;
+  }
+
+  orderAddress = { name: n, phone: p, address1: a1, address2: a2, city: c, pin: pin, state: st };
   payStep = 3;
+  renderPay();
+}
+
+function valPayment() {
+  const sub = cart.reduce((s, i) => s + i.price, 0);
+  const ship = sub >= 999 ? 0 : 99;
+  const grand = sub + ship;
+
+  if (payMethod === 'upi') {
+    const upiId = document.getElementById('pupi')?.value.trim();
+    const hasSelectedApp = document.querySelector('.uapp.sel') !== null;
+    if (!upiId && !hasSelectedApp) {
+      showToast('Please enter a UPI ID or select a UPI app');
+      return;
+    }
+    if (upiId && !/^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/.test(upiId)) {
+      showToast('Please enter a valid UPI ID (e.g. name@bank)');
+      return;
+    }
+  } else if (payMethod === 'card') {
+    const card = document.getElementById('pcard')?.value.replace(/\s/g, '');
+    const name = document.getElementById('pcn')?.value.trim();
+    const exp = document.getElementById('pexp')?.value.trim();
+    const cvv = document.getElementById('pcvv')?.value.trim();
+    
+    if (!card || !name || !exp || !cvv) {
+      showToast('Please fill all card details');
+      return;
+    }
+    if (card.length < 16) {
+      showToast('Please enter a valid 16-digit card number');
+      return;
+    }
+    if (!/^\d{2}\/\d{2}$/.test(exp)) {
+      showToast('Please enter expiry in MM/YY format');
+      return;
+    }
+    if (cvv.length < 3) {
+      showToast('Please enter a valid CVV');
+      return;
+    }
+  } else if (payMethod === 'nb') {
+    if (!selBank) {
+      showToast('Please select your bank');
+      return;
+    }
+  } else if (payMethod === 'cod') {
+    if (grand > 5000) {
+      showToast('Cash on Delivery is only available for orders under ₹5,000');
+      return;
+    }
+  }
+
+  payStep = 4;
   renderPay();
 }
 
@@ -1356,6 +1498,7 @@ function placeOrd() {
 
 function clearCart() {
   cart = [];
+  localStorage.removeItem('ng_cart');
   GAMES.forEach(g => {
     ['btn-', 'madd-'].forEach(pre => {
       const b = document.getElementById(pre + g.id);
@@ -1646,6 +1789,7 @@ window.closePay = closePay;
 window.renderPay = renderPay;
 window.setPM = setPM;
 window.valAddr = valAddr;
+window.valPayment = valPayment;
 window.placeOrd = placeOrd;
 window.clearCart = clearCart;
 window.toggleMob = toggleMob;
@@ -1668,5 +1812,9 @@ window.oauthLogin = oauthLogin;
 window.doLogin = doLogin;
 window.doRegister = doRegister;
 window.logout = logout;
+window.changePayStep = changePayStep;
+window.selectBank = selectBank;
+window.saveAddrInputs = saveAddrInputs;
+window.savePaymentInputs = savePaymentInputs;
 
 init();
