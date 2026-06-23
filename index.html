@@ -64,6 +64,17 @@
         </div>
       </div>
       
+      <!-- Interactive Social Login Form -->
+      <div class="auth-body" id="auth-social-custom-body" style="display:none">
+        <div class="auth-err" id="social-err"></div>
+        <div class="auth-fg"><label class="auth-fl" id="social-email-label">Gmail ID</label><input class="auth-in" id="sc-email" type="email" placeholder="you@gmail.com"></div>
+        <div class="auth-fg"><label class="auth-fl">Full Name</label><input class="auth-in" id="sc-name" type="text" placeholder="Rahul Sharma"></div>
+        <div style="display:flex;gap:.75rem;margin-top:1.2rem">
+          <button class="auth-submit" style="background:transparent;border:1px solid var(--br);color:var(--tx2);clip-path:none;flex:1" onclick="cancelSocialLogin()">CANCEL</button>
+          <button class="auth-submit" style="flex:2" onclick="submitSocialLogin()">CONTINUE →</button>
+        </div>
+      </div>
+      
       <!-- Login form -->
       <div class="auth-body" id="auth-login-body">
         <button class="social-auth-btn google-btn" onclick="oauthLogin('google')">
@@ -162,6 +173,9 @@
       <div class="prof-tabs">
         <button class="prof-tab active" id="ptab-overview" onclick="switchProfTab('overview')">Overview</button>
         <button class="prof-tab" id="ptab-edit" onclick="switchProfTab('edit')">Edit Profile</button>
+        <button class="prof-tab" id="ptab-orders" onclick="switchProfTab('orders')">My Orders</button>
+        <button class="prof-tab" id="ptab-wishlist" onclick="switchProfTab('wishlist')">Wishlist</button>
+        <button class="prof-tab" id="ptab-saved" onclick="switchProfTab('saved')">Saved Details</button>
         <button class="prof-tab" id="ptab-security" onclick="switchProfTab('security')">Security</button>
         <button class="prof-tab" id="ptab-notifications" onclick="switchProfTab('notifications')">Notifications</button>
       </div>

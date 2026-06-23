@@ -212,7 +212,7 @@ let profDraft = {};
 let profSkills = [];
 let profNotifs = {};
 
-function openProfile() {
+function openProfile(tab = 'overview') {
   if (!currentUser) { openAuth(); return; }
   const saved = JSON.parse(localStorage.getItem('ng_profile_' + currentUser.id) || '{}');
   profDraft = {
@@ -231,13 +231,23 @@ function openProfile() {
     dob: saved.dob || '',
     gender: saved.gender || '',
     language: saved.language || 'English',
+    address1: saved.address1 || '',
+    address2: saved.address2 || '',
+    city: saved.city || '',
+    pin: saved.pin || '',
+    state: saved.state || '',
+    cardNo: saved.cardNo || '',
+    cardName: saved.cardName || '',
+    cardExp: saved.cardExp || '',
+    cardCvv: saved.cardCvv || '',
+    upiId: saved.upiId || ''
   };
   profSkills = saved.skills || ['JavaScript', 'React', 'Node.js', 'CSS', 'Git'];
   profNotifs = saved.notifs || { newGames: true, orders: true, reviews: false, promo: true, security: true };
 
   document.getElementById('prof-ovl').classList.add('open');
   document.body.style.overflow = 'hidden';
-  switchProfTab('overview');
+  switchProfTab(tab);
 }
 
 function closeProfile() {
@@ -256,7 +266,7 @@ function switchProfTab(tab) {
   document.getElementById('ptab-' + tab)?.classList.add('active');
   const saveBar = document.getElementById('prof-save-bar');
   if (saveBar) {
-    saveBar.style.display = (tab === 'edit' || tab === 'security' || tab === 'notifications') ? 'flex' : 'none';
+    saveBar.style.display = (tab === 'edit' || tab === 'security' || tab === 'notifications' || tab === 'saved') ? 'flex' : 'none';
   }
   renderProfBody();
 }
@@ -266,6 +276,9 @@ function renderProfBody() {
   if (!body) return;
   if (profTab === 'overview') body.innerHTML = renderProfOverview();
   else if (profTab === 'edit') body.innerHTML = renderProfEdit();
+  else if (profTab === 'orders') body.innerHTML = renderProfOrders();
+  else if (profTab === 'wishlist') body.innerHTML = renderProfWishlist();
+  else if (profTab === 'saved') body.innerHTML = renderProfSaved();
   else if (profTab === 'security') body.innerHTML = renderProfSecurity();
   else if (profTab === 'notifications') body.innerHTML = renderProfNotifs();
 }
@@ -426,6 +439,187 @@ function renderProfEdit() {
     </div>`;
 }
 
+/* ── ORDERS TAB ── */
+function renderProfOrders() {
+  const orders = JSON.parse(localStorage.getItem('ng_orders') || '[]');
+  const userOrders = orders.filter(o => o.userId === currentUser.id);
+  
+  if (!userOrders.length) {
+    return `
+      <div style="text-align:center;padding:4rem 2rem;color:var(--tx2);font-family:'Share Tech Mono',monospace">
+        <span style="font-size:3.5rem;display:block;margin-bottom:1rem">📦</span>
+        <div style="font-size:.8rem;letter-spacing:2px;text-transform:uppercase;margin-bottom:.5rem">No orders placed yet</div>
+        <p style="font-family:'Rajdhani',sans-serif;font-size:.9rem;color:var(--tx2);max-width:300px;margin:0 auto">Browse our catalog and buy your first physical PC game CD!</p>
+        <button class="paynow" style="margin-top:1.5rem;display:inline-block;width:auto;padding:10px 24px" onclick="closeProfile()">BROWSE STORE</button>
+      </div>
+    `;
+  }
+  
+  return `
+    <div class="prof-section">
+      <div class="prof-sec-title">📦 Order History (${userOrders.length})</div>
+      <div style="display:flex;flex-direction:column;gap:1.25rem">
+        ${userOrders.reverse().map(o => {
+          const itemsHtml = o.items.map(item => `
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:.5rem">
+              <img src="${item.img}" style="width:30px;height:40px;object-fit:cover;border-radius:3px;border:1px solid var(--br)">
+              <div>
+                <div style="font-size:.88rem;color:var(--tx);font-weight:600;text-align:left">${item.title}</div>
+                <div style="font-size:.75rem;color:var(--tx2);text-align:left">₹${item.price.toLocaleString()} · PC CD</div>
+              </div>
+            </div>
+          `).join('');
+          
+          let statusColor = '#ffb800';
+          if (o.status === 'Dispatched') statusColor = '#00e5ff';
+          else if (o.status === 'Delivered') statusColor = '#00ff88';
+          
+          return `
+            <div style="background:var(--surf);border:1px solid var(--br);border-radius:8px;padding:1.25rem;display:flex;flex-direction:column;gap:.75rem;text-align:left">
+              <div style="display:flex;justify-content:between;align-items:center;flex-wrap:wrap;gap:.5rem;border-bottom:1px solid var(--br);padding-bottom:.6rem">
+                <div>
+                  <div style="font-family:'Share Tech Mono',monospace;font-size:.7rem;letter-spacing:1px;color:var(--tx2)">ORDER ID</div>
+                  <div style="font-family:'Share Tech Mono',monospace;font-size:.88rem;color:var(--a);font-weight:700">${o.id}</div>
+                </div>
+                <div style="margin-left:auto;text-align:right">
+                  <div style="font-family:'Share Tech Mono',monospace;font-size:.7rem;letter-spacing:1px;color:var(--tx2)">STATUS</div>
+                  <div style="font-size:.8rem;font-weight:bold;color:${statusColor}">● ${o.status || 'Processing'}</div>
+                </div>
+              </div>
+              
+              <div>${itemsHtml}</div>
+              
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;font-size:.8rem;border-top:1px solid var(--br);padding-top:.6rem;color:var(--tx2)">
+                <div>
+                  <span style="font-family:'Share Tech Mono',monospace;font-size:.6rem;display:block;letter-spacing:1px">DATE</span>
+                  <span style="color:var(--tx)">${o.date}</span>
+                </div>
+                <div style="text-align:right">
+                  <span style="font-family:'Share Tech Mono',monospace;font-size:.6rem;display:block;letter-spacing:1px">TOTAL PAID</span>
+                  <span style="color:#00ff88;font-weight:700;font-size:1.1rem">₹${o.grandTotal.toLocaleString()}</span>
+                </div>
+              </div>
+              
+              <div style="background:rgba(255,255,255,.02);border:1px dashed var(--br);padding:.75rem;border-radius:4px;font-size:.8rem">
+                <span style="font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--tx2);display:block;letter-spacing:1px;margin-bottom:2px">SHIPPED TO</span>
+                <div style="color:var(--tx)">${o.address}</div>
+                <div style="color:var(--tx2);font-size:.75rem;margin-top:2px">Phone: ${o.phone} · Paid via ${o.paymentMethod}</div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+/* ── WISHLIST TAB ── */
+function renderProfWishlist() {
+  const wishlist = JSON.parse(localStorage.getItem('ng_wishlist_' + currentUser.id) || '[]');
+  const wishGames = GAMES.filter(g => wishlist.includes(g.id));
+  
+  if (!wishGames.length) {
+    return `
+      <div style="text-align:center;padding:4rem 2rem;color:var(--tx2);font-family:'Share Tech Mono',monospace">
+        <span style="font-size:3.5rem;display:block;margin-bottom:1rem">❤️</span>
+        <div style="font-size:.8rem;letter-spacing:2px;text-transform:uppercase;margin-bottom:.5rem">Your wishlist is empty</div>
+        <p style="font-family:'Rajdhani',sans-serif;font-size:.9rem;color:var(--tx2);max-width:300px;margin:0 auto">Tap the heart icon on any game card to add it to your wishlist.</p>
+        <button class="paynow" style="margin-top:1.5rem;display:inline-block;width:auto;padding:10px 24px" onclick="closeProfile()">EXPLORE GAMES</button>
+      </div>
+    `;
+  }
+  
+  return `
+    <div class="prof-section">
+      <div class="prof-sec-title">❤️ My Wishlist (${wishGames.length})</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        ${wishGames.map(g => {
+          const isAdded = cart.find(c => c.id === g.id);
+          return `
+            <div style="background:var(--surf);border:1px solid var(--br);border-radius:8px;padding:.75rem;display:flex;gap:12px;position:relative">
+              <img src="${g.img}" style="width:70px;height:95px;object-fit:cover;border-radius:4px;border:1px solid var(--br)">
+              <div style="display:flex;flex-direction:column;flex:1;justify-content:space-between;text-align:left">
+                <div>
+                  <div style="font-size:.7rem;color:var(--tx2);font-family:'Share Tech Mono',monospace;text-transform:uppercase">${g.genre}</div>
+                  <div style="font-size:.95rem;color:var(--tx);font-weight:700;line-height:1.2;margin:2px 0 4px">${g.title}</div>
+                  <div style="color:var(--a);font-weight:bold;font-size:.9rem">₹${g.price.toLocaleString()}</div>
+                </div>
+                <div style="display:flex;gap:.5rem;margin-top:auto">
+                  <button class="paynow" style="padding:6px;font-size:.78rem;clip-path:none;flex:1" onclick="addToCart(${g.id});renderProfBody()">${isAdded ? '✓ ADDED' : 'ADD TO CART'}</button>
+                  <button class="prof-discard-btn" style="padding:6px;font-size:.78rem;margin:0" onclick="toggleWish(${g.id});renderProfBody()">REMOVE</button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+/* ── SAVED DETAILS TAB ── */
+function renderProfSaved() {
+  return `
+    <div class="prof-section">
+      <div class="prof-sec-title">📍 Saved Delivery Address</div>
+      <div class="pf-group">
+        <label class="pf-label">Address Line 1 *</label>
+        <input class="pf-input" id="spf-a1" value="${profDraft.address1 || ''}" oninput="profDraft.address1=this.value" placeholder="House No., Street Name">
+      </div>
+      <div class="pf-group">
+        <label class="pf-label">Address Line 2</label>
+        <input class="pf-input" id="spf-a2" value="${profDraft.address2 || ''}" oninput="profDraft.address2=this.value" placeholder="Colony, Landmark (optional)">
+      </div>
+      <div class="pf-row">
+        <div class="pf-group">
+          <label class="pf-label">City *</label>
+          <input class="pf-input" id="spf-c" value="${profDraft.city || ''}" oninput="profDraft.city=this.value" placeholder="Mumbai">
+        </div>
+        <div class="pf-group">
+          <label class="pf-label">PIN Code *</label>
+          <input class="pf-input" id="spf-pin" value="${profDraft.pin || ''}" maxlength="6" oninput="profDraft.pin=this.value" placeholder="400001">
+        </div>
+      </div>
+      <div class="pf-group">
+        <label class="pf-label">State *</label>
+        <select class="pf-select" id="spf-st" onchange="profDraft.state=this.value">
+          <option value="">Select State</option>
+          ${['Andhra Pradesh', 'Assam', 'Bihar', 'Delhi', 'Goa', 'Gujarat', 'Haryana', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Odisha', 'Punjab', 'Rajasthan', 'Tamil Nadu', 'Telangana', 'Uttar Pradesh', 'West Bengal'].map(s => `<option value="${s}" ${profDraft.state === s ? 'selected' : ''}>${s}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    
+    <div class="prof-section">
+      <div class="prof-sec-title">💳 Saved Card Details</div>
+      <div class="pf-group">
+        <label class="pf-label">Card Number</label>
+        <input class="pf-input" id="spf-card" value="${profDraft.cardNo || ''}" maxlength="19" oninput="this.value=this.value.replace(/[^0-9]/g,'').replace(/(.{4})/g,'$1 ').trim();profDraft.cardNo=this.value" placeholder="1234 5678 9012 3456">
+      </div>
+      <div class="pf-group">
+        <label class="pf-label">Cardholder Name</label>
+        <input class="pf-input" id="spf-cname" value="${profDraft.cardName || ''}" oninput="profDraft.cardName=this.value" placeholder="RAHUL SHARMA">
+      </div>
+      <div class="pf-row">
+        <div class="pf-group">
+          <label class="pf-label">Expiry Date</label>
+          <input class="pf-input" id="spf-exp" value="${profDraft.cardExp || ''}" maxlength="5" oninput="profDraft.cardExp=this.value" placeholder="MM/YY">
+        </div>
+        <div class="pf-group">
+          <label class="pf-label">CVV</label>
+          <input class="pf-input" id="spf-cvv" type="password" value="${profDraft.cardCvv || ''}" maxlength="4" oninput="profDraft.cardCvv=this.value" placeholder="•••">
+        </div>
+      </div>
+    </div>
+    
+    <div class="prof-section">
+      <div class="prof-sec-title">📱 Saved UPI ID</div>
+      <div class="pf-group">
+        <label class="pf-label">UPI ID</label>
+        <input class="pf-input" id="spf-upi" value="${profDraft.upiId || ''}" oninput="profDraft.upiId=this.value" placeholder="yourname@okaxis">
+      </div>
+    </div>`;
+}
+
 /* ── SECURITY TAB ── */
 function renderProfSecurity() {
   return `
@@ -582,22 +776,35 @@ function confirmDelete() {
 }
 
 function saveProfile() {
+  const oldSaved = JSON.parse(localStorage.getItem('ng_profile_' + currentUser.id) || '{}');
   const saved = {
-    phone: profDraft.phone,
-    location: profDraft.location,
-    bio: profDraft.bio,
-    jobTitle: profDraft.jobTitle,
-    company: profDraft.company,
-    website: profDraft.website,
-    github: profDraft.github,
-    twitter: profDraft.twitter,
-    linkedin: profDraft.linkedin,
-    dob: profDraft.dob,
-    gender: profDraft.gender,
-    language: profDraft.language,
-    skills: profSkills,
-    notifs: profNotifs,
+    ...oldSaved,
+    phone: profDraft.phone || '',
+    location: profDraft.location || '',
+    bio: profDraft.bio || '',
+    jobTitle: profDraft.jobTitle || '',
+    company: profDraft.company || '',
+    website: profDraft.website || '',
+    github: profDraft.github || '',
+    twitter: profDraft.twitter || '',
+    linkedin: profDraft.linkedin || '',
+    dob: profDraft.dob || '',
+    gender: profDraft.gender || '',
+    language: profDraft.language || '',
+    skills: profSkills || [],
+    notifs: profNotifs || {},
+    address1: profDraft.address1 || '',
+    address2: profDraft.address2 || '',
+    city: profDraft.city || '',
+    pin: profDraft.pin || '',
+    state: profDraft.state || '',
+    cardNo: profDraft.cardNo || '',
+    cardName: profDraft.cardName || '',
+    cardExp: profDraft.cardExp || '',
+    cardCvv: profDraft.cardCvv || '',
+    upiId: profDraft.upiId || ''
   };
+
   if (profDraft.name) {
     currentUser.name = profDraft.name;
     currentUser.initials = profDraft.name.split(' ').map(n => n[0]).join('').toUpperCase();
@@ -605,6 +812,21 @@ function saveProfile() {
   currentUser.color = profDraft.color;
   localStorage.setItem('nexus_current_user', JSON.stringify(currentUser));
   localStorage.setItem('ng_profile_' + currentUser.id, JSON.stringify(saved));
+  
+  if (profDraft.address1) {
+    orderAddress = {
+      name: currentUser.name,
+      email: currentUser.email,
+      phone: profDraft.phone || orderAddress.phone || '',
+      address1: profDraft.address1,
+      address2: profDraft.address2,
+      city: profDraft.city,
+      pin: profDraft.pin,
+      state: profDraft.state
+    };
+    localStorage.setItem('ng_order_address', JSON.stringify(orderAddress));
+  }
+
   updateNavAuth();
 
   if (profTab === 'security') {
@@ -816,12 +1038,292 @@ function startReviewNotifLoop() {
   revNotifTimer = setTimeout(showNext, 5000);
 }
 
+/* ═══════════════ WISHLIST & REVIEWS LOGIC ═══════════════ */
+let currentInputRating = 5;
+
+function loadCustomRatings() {
+  const customReviews = JSON.parse(localStorage.getItem('ng_custom_reviews') || '[]');
+  customReviews.forEach(r => {
+    const g = GAMES.find(x => x.id === r.gameId);
+    if (g) {
+      const allReviews = getGameReviews(g.id);
+      g.rating = parseFloat((allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length).toFixed(1));
+      g.rev = allReviews.length;
+    }
+  });
+}
+
+function toggleWish(id) {
+  if (!currentUser) {
+    showToast('Please sign in to add games to your wishlist.');
+    openAuth();
+    return;
+  }
+  let wishlist = JSON.parse(localStorage.getItem('ng_wishlist_' + currentUser.id) || '[]');
+  const idx = wishlist.indexOf(id);
+  let isWishlisted = false;
+  if (idx === -1) {
+    wishlist.push(id);
+    isWishlisted = true;
+    showToast('❤️ Added to wishlist');
+  } else {
+    wishlist.splice(idx, 1);
+    showToast('💔 Removed from wishlist');
+  }
+  localStorage.setItem('ng_wishlist_' + currentUser.id, JSON.stringify(wishlist));
+  
+  // Update matching wishlist buttons on game cards
+  document.querySelectorAll(`.wsh-btn[data-id="${id}"]`).forEach(btn => {
+    btn.classList.toggle('active', isWishlisted);
+  });
+  
+  // Update the modal wishlist button
+  const modalBtn = document.getElementById('mwsh-' + id);
+  if (modalBtn) {
+    modalBtn.classList.toggle('active', isWishlisted);
+    const svg = modalBtn.querySelector('svg');
+    if (svg) {
+      svg.style.fill = isWishlisted ? 'var(--a)' : 'none';
+      svg.style.stroke = isWishlisted ? 'var(--a)' : 'currentColor';
+    }
+  }
+  
+  // If profile wishlist tab is open, update it
+  if (document.getElementById('prof-ovl')?.classList.contains('open') && profTab === 'wishlist') {
+    renderProfBody();
+  }
+}
+
+function switchPdpTab(tab, id) {
+  const detailsTab = document.getElementById('pdp-tab-details');
+  const reviewsTab = document.getElementById('pdp-tab-reviews');
+  const detailsContent = document.getElementById('pdp-content-details');
+  const reviewsContent = document.getElementById('pdp-content-reviews');
+  
+  if (tab === 'details') {
+    if (detailsTab) detailsTab.classList.add('active');
+    if (reviewsTab) reviewsTab.classList.remove('active');
+    if (detailsContent) detailsContent.style.display = 'block';
+    if (reviewsContent) reviewsContent.style.display = 'none';
+  } else if (tab === 'reviews') {
+    if (detailsTab) detailsTab.classList.remove('active');
+    if (reviewsTab) reviewsTab.classList.add('active');
+    if (detailsContent) detailsContent.style.display = 'none';
+    if (reviewsContent) reviewsContent.style.display = 'block';
+    renderPdpReviews(id);
+  }
+}
+
+function getGameReviews(id) {
+  const g = GAMES.find(x => x.id === id);
+  if (!g) return [];
+  const baseReviews = REVIEW_DATA.filter(r => r.game === g.title);
+  const customReviews = JSON.parse(localStorage.getItem('ng_custom_reviews') || '[]');
+  const gameCustomReviews = customReviews.filter(r => r.gameId === id);
+  return [...gameCustomReviews.reverse(), ...baseReviews];
+}
+
+function setStarRatingInput(val) {
+  currentInputRating = val;
+  const stars = document.querySelectorAll('#review-stars-select .star-in');
+  stars.forEach((s, idx) => {
+    if (idx < val) {
+      s.textContent = '★';
+      s.classList.add('selected');
+    } else {
+      s.textContent = '☆';
+      s.classList.remove('selected');
+    }
+  });
+}
+
+function renderPdpReviews(id) {
+  const el = document.getElementById('pdp-content-reviews');
+  if (!el) return;
+  
+  const g = GAMES.find(x => x.id === id);
+  const reviews = getGameReviews(id);
+  const totalCount = reviews.length;
+  const avgRating = totalCount ? (reviews.reduce((sum, r) => sum + r.rating, 0) / totalCount).toFixed(1) : '0.0';
+  
+  const distribution = [0, 0, 0, 0, 0];
+  reviews.forEach(r => {
+    const starIdx = Math.max(1, Math.min(5, Math.round(r.rating))) - 1;
+    distribution[starIdx]++;
+  });
+  
+  let formHtml = '';
+  if (currentUser) {
+    const customReviews = JSON.parse(localStorage.getItem('ng_custom_reviews') || '[]');
+    const alreadyReviewed = customReviews.find(r => r.gameId === id && r.userId === currentUser.id);
+    
+    if (alreadyReviewed) {
+      formHtml = `
+        <div style="background:rgba(0,255,136,.05);border:1px solid rgba(0,255,136,.2);padding:1rem;border-radius:6px;margin-bottom:1.5rem;text-align:center;font-size:.85rem;color:#00ff88">
+          ✓ You have already reviewed this game. Thank you for your feedback!
+        </div>
+      `;
+    } else {
+      formHtml = `
+        <div class="write-review-form" style="background:var(--surf);border:1px solid var(--br);padding:1.25rem;border-radius:8px;margin-bottom:1.5rem;text-align:left">
+          <div style="font-family:'Share Tech Mono',monospace;font-size:.85rem;letter-spacing:1px;color:var(--a);margin-bottom:.75rem">// WRITE A REVIEW</div>
+          <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem">
+            <span style="font-size:.85rem;color:var(--tx2)">Your Rating:</span>
+            <div class="stars-input" id="review-stars-select" style="display:flex;gap:.25rem;cursor:pointer;font-size:1.4rem;color:#ffb800;user-select:none">
+              <span class="star-in" onclick="setStarRatingInput(1)">☆</span>
+              <span class="star-in" onclick="setStarRatingInput(2)">☆</span>
+              <span class="star-in" onclick="setStarRatingInput(3)">☆</span>
+              <span class="star-in" onclick="setStarRatingInput(4)">☆</span>
+              <span class="star-in" onclick="setStarRatingInput(5)">☆</span>
+            </div>
+          </div>
+          <div class="fg" style="margin-bottom:.75rem">
+            <textarea class="fin" id="review-text-input" style="height:80px;resize:none;padding:.5rem;font-size:.85rem" placeholder="Write your review here..."></textarea>
+          </div>
+          <button class="paynow" style="padding:8px 16px;font-size:.85rem;width:auto;display:inline-block" onclick="submitGameReview(${id})">SUBMIT REVIEW</button>
+        </div>
+      `;
+    }
+  } else {
+    formHtml = `
+      <div style="background:rgba(255,255,255,.02);border:1px dashed var(--br);padding:1.25rem;border-radius:8px;margin-bottom:1.5rem;text-align:center;font-size:.85rem;color:var(--tx2)">
+        Please <a href="#" onclick="event.preventDefault();closeMod();openAuth();" style="color:var(--a);text-decoration:underline">Sign In</a> to write a review.
+      </div>
+    `;
+  }
+  
+  const listHtml = reviews.map(r => `
+    <div style="background:rgba(255,255,255,.01);border:1px solid var(--br);border-radius:6px;padding:1rem;margin-bottom:.75rem;text-align:left">
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem">
+        <div style="width:28px;height:28px;border-radius:50%;background:${r.color || '#00e5ff'};display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:.78rem;color:#fff">${r.initials || 'U'}</div>
+        <div>
+          <div style="font-size:.85rem;color:var(--tx);font-weight:600">${r.name}</div>
+          <div style="font-size:.7rem;color:var(--tx2)">${r.time || 'recently'}</div>
+        </div>
+        <div style="margin-left:auto;color:#ffb800;font-size:.9rem">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div>
+      </div>
+      <div style="font-size:.85rem;color:var(--tx2);line-height:1.4">${r.text}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.6rem;font-size:.75rem;color:var(--tx2)">
+        <div>👍 ${r.helpful || 0} helpful</div>
+        ${r.verified ? `<div style="margin-left:auto;color:#00ff88">✓ Verified Purchase</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+  
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:120px 1fr;gap:1.5rem;background:var(--surf);border:1px solid var(--br);padding:1.25rem;border-radius:8px;margin-bottom:1.5rem;text-align:left">
+      <div style="text-align:center;display:flex;flex-direction:column;justify-content:center;border-right:1px solid var(--br);padding-right:1rem">
+        <div style="font-size:2.4rem;font-weight:bold;color:var(--tx);line-height:1">${avgRating}</div>
+        <div style="color:#ffb800;font-size:1.1rem;margin:.25rem 0">★★★★★</div>
+        <div style="font-size:.65rem;color:var(--tx2);text-transform:uppercase;letter-spacing:1px">${totalCount} Reviews</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.25rem;justify-content:center">
+        ${[5, 4, 3, 2, 1].map(stars => {
+          const count = distribution[stars - 1];
+          const pct = totalCount ? Math.round((count / totalCount) * 100) : 0;
+          return `
+            <div style="display:flex;align-items:center;gap:.5rem;font-size:.75rem;color:var(--tx2)">
+              <span style="width:15px">${stars}★</span>
+              <div style="flex:1;height:6px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden">
+                <div style="width:${pct}%;height:100%;background:var(--a);border-radius:3px"></div>
+              </div>
+              <span style="width:25px;text-align:right">${pct}%</span>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+    
+    ${formHtml}
+    
+    <div style="font-family:'Share Tech Mono',monospace;font-size:.85rem;letter-spacing:1px;color:var(--tx2);margin-bottom:.75rem;text-align:left">// USER REVIEWS</div>
+    ${listHtml || `<div style="text-align:center;padding:2rem;color:var(--tx2);font-size:.8rem">No reviews yet. Be the first to review!</div>`}
+  `;
+  
+  if (currentUser) {
+    setStarRatingInput(currentInputRating);
+  }
+}
+
+function submitGameReview(id) {
+  const textIn = document.getElementById('review-text-input');
+  const text = textIn ? textIn.value.trim() : '';
+  if (!text) {
+    showToast('Please enter review text');
+    return;
+  }
+  if (text.length < 10) {
+    showToast('Review must be at least 10 characters long.');
+    return;
+  }
+  
+  const customReviews = JSON.parse(localStorage.getItem('ng_custom_reviews') || '[]');
+  const alreadyReviewed = customReviews.find(r => r.gameId === id && r.userId === currentUser.id);
+  if (alreadyReviewed) {
+    showToast('You have already reviewed this game.');
+    return;
+  }
+  
+  const g = GAMES.find(x => x.id === id);
+  const newReview = {
+    gameId: id,
+    userId: currentUser.id,
+    game: g.title,
+    name: currentUser.name,
+    initials: currentUser.initials || currentUser.name.split(' ').map(n => n[0]).join('').toUpperCase(),
+    color: currentUser.color || '#00e5ff',
+    rating: currentInputRating,
+    verified: true,
+    helpful: 0,
+    time: 'Just now',
+    text: text
+  };
+  
+  customReviews.push(newReview);
+  localStorage.setItem('ng_custom_reviews', JSON.stringify(customReviews));
+  
+  const allReviews = getGameReviews(id);
+  const totalCount = allReviews.length;
+  const avgRating = parseFloat((allReviews.reduce((sum, r) => sum + r.rating, 0) / totalCount).toFixed(1));
+  
+  g.rating = avgRating;
+  g.rev = totalCount;
+  
+  showToast('✓ Review submitted successfully!');
+  renderPdpReviews(id);
+  
+  // Update header modal ratings
+  const modalStars = document.querySelector('.mbody .mrat .mstars');
+  const modalRevCount = document.querySelector('.mbody .mrat .mrn');
+  if (modalStars) {
+    modalStars.textContent = '★'.repeat(Math.floor(g.rating)) + '☆'.repeat(5 - Math.floor(g.rating));
+  }
+  if (modalRevCount) {
+    modalRevCount.textContent = `${g.rating}/5 · ${g.rev.toLocaleString()} reviews`;
+  }
+  
+  const revTabBtn = document.getElementById('pdp-tab-reviews');
+  if (revTabBtn) {
+    revTabBtn.textContent = `Reviews (${g.rev})`;
+  }
+  
+  const cardStars = document.querySelector(`.gmc #btn-${id}`)?.closest('.gmc')?.querySelector('.crat .cstars');
+  const cardRevCount = document.querySelector(`.gmc #btn-${id}`)?.closest('.gmc')?.querySelector('.crat .crn');
+  if (cardStars) {
+    cardStars.textContent = '★'.repeat(Math.floor(g.rating)) + '☆'.repeat(5 - Math.floor(g.rating));
+  }
+  if (cardRevCount) {
+    cardRevCount.textContent = `${g.rating} (${g.rev.toLocaleString()})`;
+  }
+}
+
 /* ═══════════════ INIT ═══════════════ */
 function init() {
   if ('scrollRestoration' in history) {
     history.scrollRestoration = 'manual';
   }
   window.scrollTo(0, 0);
+  loadCustomRatings();
   renderGenreCards();
   renderFooterGenres();
   updateNavAuth();
@@ -930,12 +1432,17 @@ function filterG(gid, filter, btn) {
 
 function renderGameCards(games) {
   if (!games.length) return `<div style="grid-column:1/-1;text-align:center;padding:4rem;color:var(--tx2);font-family:'Share Tech Mono',monospace;font-size:.75rem;letter-spacing:2px">NO TITLES FOUND</div>`;
+  const wishlist = currentUser ? JSON.parse(localStorage.getItem('ng_wishlist_' + currentUser.id) || '[]') : [];
   return games.map((g, i) => {
+    const isWishlisted = wishlist.includes(g.id);
     return `<div class="gmc" style="animation-delay:${i * .06}s">
       <div class="cw">
         <img src="${g.img}" alt="${g.title}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
         <div class="img-err" style="display:none"><span>💿</span>${g.title}</div>
         ${g.badge ? `<span class="bdg bdg-${g.badge}">${g.badge === 'new' ? '● NEW' : g.badge === 'sale' ? '% SALE' : '🔥 HOT'}</span>` : ''}
+        <button class="wsh-btn ${isWishlisted ? 'active' : ''}" data-id="${g.id}" onclick="event.stopPropagation();toggleWish(${g.id})">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
         <div class="cov">
           <button class="qadd" onclick="event.stopPropagation();addToCart(${g.id})">QUICK ADD TO CART</button>
           <button class="infob" onclick="event.stopPropagation();openModal(${g.id})">ⓘ VIEW DETAILS</button>
@@ -1055,6 +1562,8 @@ function openModal(id) {
   const g = GAMES.find(x => x.id === id);
   const disc = g.orig ? Math.round((1 - g.price / g.orig) * 100) : 0;
   const isAdded = cart.find(c => c.id === id);
+  const wishlist = currentUser ? JSON.parse(localStorage.getItem('ng_wishlist_' + currentUser.id) || '[]') : [];
+  const isWishlisted = wishlist.includes(g.id);
   const inner = document.getElementById('modal-inner');
   if (!inner) return;
   inner.innerHTML = `
@@ -1072,28 +1581,45 @@ function openModal(id) {
           <span class="mstars">${'★'.repeat(Math.floor(g.rating))}${'☆'.repeat(5 - Math.floor(g.rating))}</span>
           <span class="mrn">${g.rating}/5 · ${g.rev.toLocaleString()} reviews</span>
         </div>
-        <p class="mdesc">${g.desc}</p>
-        <div class="mmedia-gallery" style="margin-bottom: 1.5rem;">
-          <div class="mreqt">// MEDIA GALLERY</div>
-          <div id="mmedia-viewport" class="mviewport-container"></div>
-          <div class="mscrow" id="mmedia-thumbs"></div>
+        
+        <div class="pdp-tabs">
+          <button class="pdp-tab active" id="pdp-tab-details" onclick="switchPdpTab('details', ${g.id})">Details</button>
+          <button class="pdp-tab" id="pdp-tab-reviews" onclick="switchPdpTab('reviews', ${g.id})">Reviews (${g.rev})</button>
         </div>
-        <div class="mmgrid">
-          <div class="mmi"><div class="mmil">Discs</div><div class="mmiv">💿 ${g.discs}</div></div>
-          <div class="mmi"><div class="mmil">Install Size</div><div class="mmiv">💾 ${g.size}</div></div>
-          <div class="mmi"><div class="mmil">Players</div><div class="mmiv">👥 ${g.players}</div></div>
-          <div class="mmi"><div class="mmil">Publisher</div><div class="mmiv">🏢 ${g.pub}</div></div>
+
+        <div id="pdp-content-details">
+          <p class="mdesc">${g.desc}</p>
+          <div class="mmedia-gallery" style="margin-bottom: 1.5rem;">
+            <div class="mreqt">// MEDIA GALLERY</div>
+            <div id="mmedia-viewport" class="mviewport-container"></div>
+            <div class="mscrow" id="mmedia-thumbs"></div>
+          </div>
+          <div class="mmgrid">
+            <div class="mmi"><div class="mmil">Discs</div><div class="mmiv">💿 ${g.discs}</div></div>
+            <div class="mmi"><div class="mmil">Install Size</div><div class="mmiv">💾 ${g.size}</div></div>
+            <div class="mmi"><div class="mmil">Players</div><div class="mmiv">👥 ${g.players}</div></div>
+            <div class="mmi"><div class="mmil">Publisher</div><div class="mmiv">🏢 ${g.pub}</div></div>
+          </div>
+          <div class="mtags">${g.tags.map(t => `<span class="mtag2">${t}</span>`).join('')}</div>
+          <div class="mreq">
+            <div class="mreqt">Minimum System Requirements</div>
+            ${Object.entries(g.req).map(([k, v]) => `<div class="mreqr"><span class="mreqk">${k}</span><span class="mreqv">${v}</span></div>`).join('')}
+          </div>
         </div>
-        <div class="mtags">${g.tags.map(t => `<span class="mtag2">${t}</span>`).join('')}</div>
-        <div class="mreq">
-          <div class="mreqt">Minimum System Requirements</div>
-          ${Object.entries(g.req).map(([k, v]) => `<div class="mreqr"><span class="mreqk">${k}</span><span class="mreqv">${v}</span></div>`).join('')}
-        </div>
-        <div class="mprrow">
+        
+        <div id="pdp-content-reviews" style="display:none"></div>
+
+        <div class="mprrow" style="margin-top:1.5rem">
           <div class="mpr">₹${g.price.toLocaleString()}</div>
           ${g.orig ? `<div class="mpro">₹${g.orig.toLocaleString()}</div><div class="mdisc">${disc}% OFF</div>` : ''}
         </div>
-        <button class="madd${isAdded ? ' added' : ''}" id="madd-${g.id}" onclick="addToCart(${g.id})">${isAdded ? '✓ ADDED TO CART' : 'ADD TO CART — ₹' + g.price.toLocaleString()}</button>
+        
+        <div style="display:flex;gap:.75rem;margin-top:1rem">
+          <button class="madd${isAdded ? ' added' : ''}" id="madd-${g.id}" style="flex:1;margin:0" onclick="addToCart(${g.id})">${isAdded ? '✓ ADDED TO CART' : 'ADD TO CART — ₹' + g.price.toLocaleString()}</button>
+          <button class="wsh-btn-modal ${isWishlisted ? 'active' : ''}" id="mwsh-${g.id}" onclick="toggleWish(${g.id})">
+            <svg viewBox="0 0 24 24" style="fill:${isWishlisted ? 'var(--a)' : 'none'};stroke:${isWishlisted ? 'var(--a)' : 'currentColor'}"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          </button>
+        </div>
       </div>
     </div>`;
   document.getElementById('movl').classList.add('open');
@@ -1230,13 +1756,31 @@ function openPay() {
   payStep = 1; payMethod = 'upi'; selBank = '';
   payCardNo = ''; payCardName = ''; payCardExp = ''; payCardCvv = ''; payUpiId = ''; payUpiApp = '';
   
-  if (!orderAddress.name && currentUser) {
-    orderAddress.name = currentUser.name;
-    orderAddress.email = currentUser.email;
+  if (currentUser) {
     const saved = JSON.parse(localStorage.getItem('ng_profile_' + currentUser.id) || '{}');
-    if (saved.phone) {
-      orderAddress.phone = saved.phone;
+    orderAddress = {
+      name: currentUser.name || '',
+      email: currentUser.email || '',
+      phone: saved.phone || orderAddress.phone || '',
+      address1: saved.address1 || '',
+      address2: saved.address2 || '',
+      city: saved.city || '',
+      pin: saved.pin || '',
+      state: saved.state || ''
+    };
+    if (saved.cardNo) {
+      payCardNo = saved.cardNo;
+      payCardName = saved.cardName || '';
+      payCardExp = saved.cardExp || '';
+      payCardCvv = saved.cardCvv || '';
+      payMethod = 'card';
     }
+    if (saved.upiId) {
+      payUpiId = saved.upiId;
+      if (!saved.cardNo) payMethod = 'upi';
+    }
+  } else {
+    orderAddress = { name: '', email: '', phone: '', address1: '', address2: '', city: '', pin: '', state: '' };
   }
   
   renderPay();
@@ -1510,13 +2054,15 @@ function placeOrd() {
   const grand = sub + ship;
   const pml = { upi: 'UPI / QR Code', card: 'Debit / Credit Card', nb: 'Net Banking', cod: 'Cash on Delivery' };
   
+  const fullAddress = `${orderAddress.address1}${orderAddress.address2 ? ', ' + orderAddress.address2 : ''}, ${orderAddress.city} - ${orderAddress.pin}, ${orderAddress.state}`;
+  
   const orderDetails = {
     email: orderAddress.email || 'adityamazire510@gmail.com',
     name: orderAddress.name || 'Customer',
     orderId: activeOrderId,
     grandTotal: grand,
     items: cart.map(i => ({ title: i.title, price: i.price, img: i.img, genre: i.genre })),
-    address: `${orderAddress.address1}${orderAddress.address2 ? ', ' + orderAddress.address2 : ''}, ${orderAddress.city} - ${orderAddress.pin}, ${orderAddress.state}`,
+    address: fullAddress,
     phone: orderAddress.phone,
     paymentMethod: pml[payMethod]
   };
@@ -1526,6 +2072,24 @@ function placeOrd() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(orderDetails)
   }).catch(err => console.error('Failed to send order email:', err));
+
+  // Save order to local history
+  if (currentUser) {
+    const orders = JSON.parse(localStorage.getItem('ng_orders') || '[]');
+    const newOrder = {
+      id: activeOrderId,
+      userId: currentUser.id,
+      items: cart.map(i => ({ title: i.title, price: i.price, img: i.img })),
+      grandTotal: grand,
+      address: fullAddress,
+      phone: orderAddress.phone,
+      paymentMethod: pml[payMethod],
+      status: 'Processing',
+      date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+    };
+    orders.push(newOrder);
+    localStorage.setItem('ng_orders', JSON.stringify(orders));
+  }
 
   payStep = 5;
   renderPay();
@@ -1662,28 +2226,89 @@ function showAuthErr(id, msg) {
   if (el) { el.textContent = msg; el.classList.add('show'); }
 }
 
+let activeSocialProvider = '';
+
 function oauthLogin(provider) {
-  const profiles = OAUTH_PROFILES[provider];
-  const profile = profiles[Math.floor(Math.random() * profiles.length)];
+  activeSocialProvider = provider;
   const names = { google: 'Google', outlook: 'Microsoft', github: 'GitHub' };
+  const labels = { google: 'Gmail ID *', outlook: 'Outlook ID *', github: 'GitHub Email / Username *' };
+  const placeholders = { google: 'you@gmail.com', outlook: 'you@outlook.com', github: 'username or email' };
 
   document.getElementById('auth-login-body').style.display = 'none';
   document.getElementById('auth-register-body').style.display = 'none';
+  
+  const labelEl = document.getElementById('social-email-label');
+  const inputEl = document.getElementById('sc-email');
+  const nameEl = document.getElementById('sc-name');
+  
+  if (labelEl && inputEl && nameEl) {
+    labelEl.textContent = labels[provider];
+    inputEl.placeholder = placeholders[provider];
+    inputEl.value = '';
+    nameEl.value = '';
+    document.getElementById('social-err').classList.remove('show');
+  }
+
+  document.getElementById('auth-social-custom-body').style.display = 'block';
+}
+
+function cancelSocialLogin() {
+  document.getElementById('auth-social-custom-body').style.display = 'none';
+  document.getElementById('auth-login-body').style.display = 'block';
+  activeSocialProvider = '';
+}
+
+function submitSocialLogin() {
+  const email = (document.getElementById('sc-email')?.value || '').trim();
+  const name = (document.getElementById('sc-name')?.value || '').trim();
+  
+  if (!email || !name) {
+    showAuthErr('social-err', 'Please fill all fields.');
+    return;
+  }
+
+  if (activeSocialProvider === 'google' && !email.includes('@')) {
+    showAuthErr('social-err', 'Please enter a valid Gmail ID.');
+    return;
+  }
+
+  const names = { google: 'Google', outlook: 'Microsoft', github: 'GitHub' };
+  const colors = { google: '#EA4335', outlook: '#0078D4', github: '#333' };
+
+  document.getElementById('auth-social-custom-body').style.display = 'none';
   document.getElementById('oauth-loading-screen').style.display = 'block';
-  document.getElementById('oauth-msg').textContent = `Connecting to ${names[provider]}...`;
+  document.getElementById('oauth-msg').textContent = `Connecting to ${names[activeSocialProvider]}...`;
 
   setTimeout(() => {
-    document.getElementById('oauth-msg').textContent = 'Verifying your account...';
+    document.getElementById('oauth-msg').textContent = 'Verifying credentials...';
     setTimeout(() => {
+      const users = JSON.parse(localStorage.getItem('nexus_users') || '[]');
+      let found = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.provider === activeSocialProvider);
+      
+      if (!found) {
+        found = {
+          id: 'oauth-' + Date.now(),
+          name: name,
+          email: email,
+          provider: activeSocialProvider,
+          color: colors[activeSocialProvider],
+          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
+          pw: ''
+        };
+        users.push(found);
+        localStorage.setItem('nexus_users', JSON.stringify(users));
+      }
+
       const user = {
-        id: 'oauth-' + Date.now(),
-        name: profile.name,
-        email: profile.email,
-        avatar: profile.avatar,
-        color: profile.color,
-        provider,
-        initials: profile.name.split(' ').map(n => n[0]).join('').toUpperCase()
+        id: found.id,
+        name: found.name,
+        email: found.email,
+        avatar: found.avatar,
+        color: found.color,
+        provider: found.provider,
+        initials: found.name.split(' ').map(n => n[0]).join('').toUpperCase()
       };
+      
       completeLogin(user);
     }, 900);
   }, 1000);
@@ -1759,9 +2384,9 @@ function updateNavAuth() {
         <span style="font-size:.6rem;color:var(--tx2);margin-left:2px">▾</span>
         <div class="user-menu">
           <div class="user-menu-item" style="pointer-events:none;opacity:.6;font-size:.6rem">${currentUser.email}</div>
-          <div class="user-menu-item" onclick="openProfile()">👤 My Profile</div>
-          <div class="user-menu-item" onclick="showToast('Orders coming soon!')">📦 My Orders</div>
-          <div class="user-menu-item" onclick="showToast('Wishlist coming soon!')">❤️ Wishlist</div>
+          <div class="user-menu-item" onclick="openProfile('overview')">👤 My Profile</div>
+          <div class="user-menu-item" onclick="openProfile('orders')">📦 My Orders</div>
+          <div class="user-menu-item" onclick="openProfile('wishlist')">❤️ Wishlist</div>
           <div class="user-menu-item logout" onclick="logout()">⏻ Sign Out</div>
         </div>
       </div>`;
@@ -1851,5 +2476,11 @@ window.changePayStep = changePayStep;
 window.selectBank = selectBank;
 window.saveAddrInputs = saveAddrInputs;
 window.savePaymentInputs = savePaymentInputs;
+window.cancelSocialLogin = cancelSocialLogin;
+window.submitSocialLogin = submitSocialLogin;
+window.toggleWish = toggleWish;
+window.switchPdpTab = switchPdpTab;
+window.submitGameReview = submitGameReview;
+window.setStarRatingInput = setStarRatingInput;
 
 init();
