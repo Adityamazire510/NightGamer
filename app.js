@@ -1477,13 +1477,25 @@ function openGameEditor(gameId) {
       </div>
       
       <div class="pf-group">
-        <label class="pf-label">Cover Image URL *</label>
-        <input class="pf-input" id="ed-img" value="${g.img}" placeholder="Images/cover.jpg or web url">
+        <label class="pf-label">Cover Image *</label>
+        <div style="display:flex;gap:.5rem;align-items:center">
+          <input class="pf-input" id="ed-img" value="${g.img}" placeholder="Images/cover.jpg or web url" style="flex:1">
+          <div style="position:relative;overflow:hidden;display:inline-block">
+            <button class="paynow" style="margin:0;padding:8px 14px;font-size:.78rem;clip-path:none" type="button">UPLOAD FILE</button>
+            <input type="file" id="ed-img-file" accept="image/*" style="position:absolute;font-size:100px;left:0;top:0;opacity:0;cursor:pointer" onchange="handleAdminImgUpload(this, 'ed-img')">
+          </div>
+        </div>
       </div>
       
       <div class="pf-group">
         <label class="pf-label">Screenshots URLs (comma separated)</label>
-        <input class="pf-input" id="ed-screens" value="${g.screens ? g.screens.join(', ') : ''}" placeholder="url1, url2">
+        <div style="display:flex;gap:.5rem;align-items:center">
+          <input class="pf-input" id="ed-screens" value="${g.screens ? g.screens.join(', ') : ''}" placeholder="url1, url2" style="flex:1">
+          <div style="position:relative;overflow:hidden;display:inline-block">
+            <button class="paynow" style="margin:0;padding:8px 14px;font-size:.78rem;clip-path:none" type="button">UPLOAD FILE(S)</button>
+            <input type="file" id="ed-screens-file" accept="image/*" multiple style="position:absolute;font-size:100px;left:0;top:0;opacity:0;cursor:pointer" onchange="handleAdminImgUpload(this, 'ed-screens', true)">
+          </div>
+        </div>
       </div>
       
       <div class="pf-group">
@@ -1664,6 +1676,78 @@ function deleteAdminGame(gameId) {
   }
 
   renderAdminTab();
+}
+
+function compressAndBase64(file, maxWidth = 800, maxHeight = 800, quality = 0.7) {
+  return new Promise((resolve, reject) => {
+    const imgObj = new Image();
+    imgObj.onload = () => {
+      let width = imgObj.width;
+      let height = imgObj.height;
+      
+      if (width > height) {
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width = Math.round((width * maxHeight) / height);
+          height = maxHeight;
+        }
+      }
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(imgObj, 0, 0, width, height);
+      
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+      resolve(compressedDataUrl);
+    };
+    imgObj.onerror = (err) => reject(err);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      imgObj.src = e.target.result;
+    };
+    reader.onerror = (err) => reject(err);
+    reader.readAsDataURL(file);
+  });
+}
+
+function handleAdminImgUpload(input, targetId, isMultiple = false) {
+  const files = input.files;
+  if (!files || !files.length) return;
+  
+  const target = document.getElementById(targetId);
+  if (!target) return;
+  
+  showToast('Resizing and optimizing image(s)...');
+  
+  const promises = Array.from(files).map(file => {
+    const maxW = isMultiple ? 1200 : 600;
+    const maxH = isMultiple ? 800 : 800;
+    return compressAndBase64(file, maxW, maxH, 0.75);
+  });
+  
+  Promise.all(promises).then(base64Urls => {
+    if (isMultiple) {
+      let currentVal = target.value.trim();
+      const newUrls = base64Urls.join(', ');
+      if (currentVal) {
+        target.value = currentVal + ', ' + newUrls;
+      } else {
+        target.value = newUrls;
+      }
+    } else {
+      target.value = base64Urls[0];
+    }
+    showToast('✓ Image(s) uploaded successfully!');
+  }).catch(err => {
+    console.error('Failed to compress image:', err);
+    showToast('❌ Image upload failed.');
+  });
 }
 
 /* ═══════════════ INIT ═══════════════ */
@@ -2852,5 +2936,6 @@ window.renderAdminTab = renderAdminTab;
 window.openGameEditor = openGameEditor;
 window.saveAdminGame = saveAdminGame;
 window.deleteAdminGame = deleteAdminGame;
+window.handleAdminImgUpload = handleAdminImgUpload;
 
 init();
