@@ -1565,7 +1565,7 @@ function saveAdminGame(gameId) {
   const players = document.getElementById('ed-players')?.value.trim();
   const img = document.getElementById('ed-img')?.value.trim();
   const screensStr = document.getElementById('ed-screens')?.value.trim();
-  const screens = screensStr ? screensStr.split(',').map(s => s.trim()).filter(Boolean) : [];
+  const screens = screensStr ? screensStr.split(/(?<!base64),\s*/).map(s => s.trim()).filter(Boolean) : [];
   const video = document.getElementById('ed-video')?.value.trim();
   const desc = document.getElementById('ed-desc')?.value.trim();
   const tagsStr = document.getElementById('ed-tags')?.value.trim();
