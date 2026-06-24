@@ -1672,6 +1672,7 @@ function saveAdminGame(gameId) {
   }
 
   renderAdminTab();
+  initHeroCarousel();
 }
 
 function deleteAdminGame(gameId) {
@@ -1708,6 +1709,7 @@ function deleteAdminGame(gameId) {
   }
 
   renderAdminTab();
+  initHeroCarousel();
 }
 
 function compressAndBase64(file, maxWidth = 800, maxHeight = 800, quality = 0.7) {
@@ -1782,6 +1784,100 @@ function handleAdminImgUpload(input, targetId, isMultiple = false) {
   });
 }
 
+/* ═══════════════ HERO CAROUSEL LOGIC ═══════════════ */
+let heroGames = [];
+let currentHeroIdx = 0;
+let heroTimer = null;
+
+function initHeroCarousel() {
+  if (heroTimer) clearInterval(heroTimer);
+  const pool = GAMES.length ? GAMES : DEFAULT_GAMES;
+  // Pick 5 random games
+  heroGames = [...pool].sort(() => Math.random() - 0.5).slice(0, 5);
+  currentHeroIdx = 0;
+  
+  renderHeroSlide();
+  
+  heroTimer = setInterval(nextHeroSlide, 7000);
+}
+
+function renderHeroSlide() {
+  const heroSection = document.getElementById('hero-section');
+  if (!heroSection) return;
+  
+  const g = heroGames[currentHeroIdx];
+  if (!g) return;
+  
+  const bgImg = g.screens && g.screens.length ? g.screens[0] : g.img;
+  heroSection.style.backgroundImage = `linear-gradient(rgba(11, 14, 20, 0.45), rgba(11, 14, 20, 0.88)), url('${bgImg}')`;
+  
+  const isAdded = cart.find(c => c.id === g.id);
+  const dotsHtml = heroGames.map((_, idx) => `
+    <button class="hero-dot${idx === currentHeroIdx ? ' active' : ''}" onclick="setHeroSlide(${idx})" title="Go to slide ${idx + 1}"></button>
+  `).join('');
+  
+  let displayTitle = g.title;
+  if (displayTitle.includes(':')) {
+    displayTitle = displayTitle.replace(':', '<br><span class="hl">') + '</span>';
+  } else if (displayTitle.includes('-')) {
+    displayTitle = displayTitle.replace('-', '<br><span class="hl">') + '</span>';
+  } else {
+    const words = displayTitle.split(' ');
+    if (words.length > 1) {
+      const lastWord = words.pop();
+      displayTitle = words.join(' ') + `<br><span class="hl">${lastWord}</span>`;
+    } else {
+      displayTitle = `<span class="hl">${displayTitle}</span>`;
+    }
+  }
+  
+  heroSection.innerHTML = `
+    <div class="hero-bg"></div>
+    <div class="hero-c">
+      <div class="htag">${g.genre.toUpperCase()} · ${g.year} · CD EDITION</div>
+      <h1>${displayTitle}</h1>
+      <p>${g.desc.substring(0, 180)}${g.desc.length > 180 ? '...' : ''}</p>
+      <div class="hcta" style="margin-top:1.5rem;display:flex;gap:.75rem">
+        <button class="paynow" style="margin:0;width:auto;padding:12px 24px" id="hadd-${g.id}" onclick="addToCart(${g.id})">${isAdded ? 'ADDED ✓' : 'ADD TO CART — ₹' + g.price.toLocaleString()}</button>
+        <button class="bo" style="margin:0;width:auto;padding:12px 24px" onclick="openModal(${g.id})">VIEW DETAILS</button>
+      </div>
+    </div>
+    <div class="hero-vis" style="cursor:pointer" onclick="openModal(${g.id})">
+      <div class="cd">
+        <div class="cd-img" style="background-image: url('${g.img}');"></div>
+        <div class="cd-r"></div>
+        <div class="cd-r"></div>
+        <div class="cd-r"></div>
+        <div class="cd-c"></div>
+      </div>
+    </div>
+    <div class="hero-dots">${dotsHtml}</div>
+  `;
+}
+
+function updateHeroBtns() {
+  const g = heroGames[currentHeroIdx];
+  if (!g) return;
+  const btn = document.getElementById(`hadd-${g.id}`);
+  if (btn) {
+    const isAdded = cart.find(c => c.id === g.id);
+    btn.textContent = isAdded ? 'ADDED ✓' : 'ADD TO CART — ₹' + g.price.toLocaleString();
+  }
+}
+
+function nextHeroSlide() {
+  if (!heroGames.length) return;
+  currentHeroIdx = (currentHeroIdx + 1) % heroGames.length;
+  renderHeroSlide();
+}
+
+function setHeroSlide(idx) {
+  currentHeroIdx = idx;
+  renderHeroSlide();
+  if (heroTimer) clearInterval(heroTimer);
+  heroTimer = setInterval(nextHeroSlide, 7000);
+}
+
 /* ═══════════════ INIT ═══════════════ */
 function init() {
   if ('scrollRestoration' in history) {
@@ -1802,6 +1898,7 @@ function init() {
   }
 
   loadCustomRatings();
+  initHeroCarousel();
   renderGenreCards();
   renderFooterGenres();
   updateNavAuth();
@@ -2148,6 +2245,9 @@ function restoreAddedBtns() {
       mb.classList.toggle('added', !!cart.find(c => c.id === g.id));
     }
   });
+  if (typeof updateHeroBtns === 'function') {
+    updateHeroBtns();
+  }
 }
 
 function updateCartUI() {
@@ -2969,5 +3069,6 @@ window.openGameEditor = openGameEditor;
 window.saveAdminGame = saveAdminGame;
 window.deleteAdminGame = deleteAdminGame;
 window.handleAdminImgUpload = handleAdminImgUpload;
+window.setHeroSlide = setHeroSlide;
 
 init();
