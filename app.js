@@ -1791,7 +1791,12 @@ let heroTimer = null;
 
 function initHeroCarousel() {
   if (heroTimer) clearInterval(heroTimer);
-  const pool = GAMES.length ? GAMES : DEFAULT_GAMES;
+  const catalog = GAMES.length ? GAMES : DEFAULT_GAMES;
+  let pool = catalog.filter(g => g.img && g.img.trim() !== '');
+  if (!pool.length) {
+    pool = DEFAULT_GAMES.filter(g => g.img && g.img.trim() !== '');
+  }
+  
   // Pick 5 random games
   heroGames = [...pool].sort(() => Math.random() - 0.5).slice(0, 5);
   currentHeroIdx = 0;
