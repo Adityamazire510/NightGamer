@@ -2149,7 +2149,7 @@ function showGenrePage(gid) {
     <div class="ghero">
       <div class="ghero-bg" style="background:radial-gradient(ellipse 60% 70% at 80% 30%,${g.color}22 0%,transparent 65%),radial-gradient(ellipse 30% 40% at 10% 80%,${g.color}11 0%,transparent 60%)"></div>
       <div class="ghero-c">
-        <button class="back-b" onclick="showPage('home')">← BACK TO STORE</button>
+        <button class="back-b" onclick="goHome()">← BACK TO STORE</button>
         <span style="font-size:4rem;display:block;margin-bottom:1rem">${g.icon}</span>
         <div style="font-family:'Share Tech Mono',monospace;font-size:.7rem;letter-spacing:4px;color:${g.color};text-transform:uppercase;margin-bottom:.5rem">PC GAME CDs</div>
         <div class="ghtit" style="color:${g.color};text-shadow:0 0 40px ${g.color}55">${g.name}</div>
@@ -3222,6 +3222,7 @@ function spawnParticles() {
 
 // Bind global event handlers to window object for raw onclick references in HTML
 window.goHome = goHome;
+window.showPage = showPage;
 window.showGenrePage = showGenrePage;
 window.filterG = filterG;
 window.addToCart = addToCart;
