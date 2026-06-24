@@ -195,6 +195,20 @@ const DEFAULT_GAMES = [
     tags: ['Horror', 'Thriller', 'Narrative', 'Action', 'Atmospheric'],
     req: { OS: 'Windows 10 64-bit', CPU: 'Intel Core i5-4690K', RAM: '8 GB', GPU: 'NVIDIA GTX 1050 Ti', Storage: '30 GB' }
   },
+  {
+    id: 19, title: '33 IMMORTALS', dev: 'Thunder Lotus Games', pub: 'Thunder Lotus Games', genre: 'adventure', year: 2024, price: 999, orig: 1499, rating: 4.8, rev: 120, badge: 'new',
+    img: 'Images/33 immortals.jpg',
+    screens: [
+      'Images/33 immortals 123.jpg',
+      'Images/33 immortals 345.jpg',
+      'Images/images.jpg',
+      'Images/images (1).jpg'
+    ],
+    desc: '33 Immortals is a co-op action-roguelike for 33 players. Play a damned soul, and rebel against God\'s final judgment.',
+    discs: '1 Disc', size: '20 GB', players: '1-33 Players',
+    tags: ['Action', 'Roguelike', 'Co-op', 'Multiplayer', 'Indie'],
+    req: { OS: 'Windows 10 64-bit', CPU: 'Intel Core i5', RAM: '8 GB', GPU: 'NVIDIA GTX 970', Storage: '20 GB' }
+  }
 ];
 
 let GAMES = JSON.parse(localStorage.getItem('ng_games')) || DEFAULT_GAMES;
@@ -1056,6 +1070,24 @@ function startReviewNotifLoop() {
 let currentInputRating = 5;
 
 function loadCustomRatings() {
+  if (localStorage.getItem('ng_games')) {
+    let localGames = JSON.parse(localStorage.getItem('ng_games'));
+    let foundIdx = localGames.findIndex(g => g.title.toUpperCase() === '33 IMMORTALS');
+    const correctGame = DEFAULT_GAMES.find(g => g.title === '33 IMMORTALS');
+    if (correctGame) {
+      if (foundIdx === -1) {
+        localGames.push(correctGame);
+        localStorage.setItem('ng_games', JSON.stringify(localGames));
+        GAMES = localGames;
+      } else {
+        localGames[foundIdx].img = correctGame.img;
+        localGames[foundIdx].screens = correctGame.screens;
+        localStorage.setItem('ng_games', JSON.stringify(localGames));
+        GAMES = localGames;
+      }
+    }
+  }
+
   const customReviews = JSON.parse(localStorage.getItem('ng_custom_reviews') || '[]');
   customReviews.forEach(r => {
     const g = GAMES.find(x => x.id === r.gameId);
