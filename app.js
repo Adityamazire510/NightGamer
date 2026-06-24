@@ -565,16 +565,16 @@ function renderProfWishlist() {
           const isAdded = cart.find(c => c.id === g.id);
           return `
             <div style="background:var(--surf);border:1px solid var(--br);border-radius:8px;padding:.75rem;display:flex;gap:12px;position:relative">
-              <img src="${g.img}" style="width:70px;height:95px;object-fit:cover;border-radius:4px;border:1px solid var(--br)">
+              <img src="${g.img}" style="width:70px;height:95px;object-fit:cover;border-radius:4px;border:1px solid var(--br);cursor:pointer" title="View details" onclick="closeProfile();openModal(${g.id})">
               <div style="display:flex;flex-direction:column;flex:1;justify-content:space-between;text-align:left">
                 <div>
                   <div style="font-size:.7rem;color:var(--tx2);font-family:'Share Tech Mono',monospace;text-transform:uppercase">${g.genre}</div>
-                  <div style="font-size:.95rem;color:var(--tx);font-weight:700;line-height:1.2;margin:2px 0 4px">${g.title}</div>
+                  <div style="font-size:.95rem;color:var(--tx);font-weight:700;line-height:1.2;margin:2px 0 4px;cursor:pointer" title="View details" onclick="closeProfile();openModal(${g.id})">${g.title}</div>
                   <div style="color:var(--a);font-weight:bold;font-size:.9rem">₹${g.price.toLocaleString()}</div>
                 </div>
-                <div style="display:flex;gap:.5rem;margin-top:auto">
-                  <button class="paynow" style="padding:6px;font-size:.78rem;clip-path:none;flex:1" onclick="addToCart(${g.id});renderProfBody()">${isAdded ? '✓ ADDED' : 'ADD TO CART'}</button>
-                  <button class="prof-discard-btn" style="padding:6px;font-size:.78rem;margin:0" onclick="toggleWish(${g.id});renderProfBody()">REMOVE</button>
+                <div style="display:flex;gap:.4rem;margin-top:auto">
+                  <button class="paynow" style="padding:4px 6px;font-size:.68rem;clip-path:none;flex:1;margin:0" onclick="addToCart(${g.id});renderProfBody()">${isAdded ? '✓ ADDED' : 'ADD TO CART'}</button>
+                  <button class="prof-discard-btn" style="padding:4px 6px;font-size:.68rem;margin:0" onclick="toggleWish(${g.id});renderProfBody()">REMOVE</button>
                 </div>
               </div>
             </div>
