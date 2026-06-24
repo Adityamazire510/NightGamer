@@ -1,3 +1,151 @@
+/* ═══════════════ SUPABASE CLOUD DATABASE CONFIG ═══════════════ */
+// Paste your actual Supabase credentials here to make the website live on the cloud:
+const SUPABASE_URL = "YOUR_SUPABASE_URL";
+const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+
+let supabase = null;
+if (typeof window.supabase !== 'undefined' && SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+  try {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('☁️ Supabase Cloud Database Client Initialized Successfully!');
+  } catch (err) {
+    console.error('Failed to initialize Supabase client:', err);
+  }
+}
+
+// Global Custom Reviews Cache
+let CLOUD_REVIEWS = [];
+
+// Database Sync & API Helper Functions
+async function dbFetchGames() {
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.from('games').select('*').order('id', { ascending: true });
+      if (!error && data && data.length > 0) {
+        return data;
+      }
+      if (!error && data && data.length === 0) {
+        // If table is empty, auto-seed with DEFAULT_GAMES
+        await supabase.from('games').insert(DEFAULT_GAMES);
+        return DEFAULT_GAMES;
+      }
+    } catch (e) {
+      console.error('Supabase fetch games error, falling back:', e);
+    }
+  }
+  return JSON.parse(localStorage.getItem('ng_games')) || DEFAULT_GAMES;
+}
+
+async function dbSaveGame(game) {
+  if (supabase) {
+    try {
+      const { error } = await supabase.from('games').upsert([game]);
+      if (!error) return true;
+      console.error('Supabase save game error:', error);
+    } catch (e) {
+      console.error('Supabase save game exception:', e);
+    }
+  }
+  const idx = GAMES.findIndex(g => g.id === game.id);
+  if (idx === -1) {
+    GAMES.push(game);
+  } else {
+    GAMES[idx] = game;
+  }
+  localStorage.setItem('ng_games', JSON.stringify(GAMES));
+  return true;
+}
+
+async function dbDeleteGame(gameId) {
+  if (supabase) {
+    try {
+      const { error } = await supabase.from('games').delete().eq('id', gameId);
+      if (!error) return true;
+      console.error('Supabase delete game error:', error);
+    } catch (e) {
+      console.error('Supabase delete game exception:', e);
+    }
+  }
+  GAMES = GAMES.filter(g => g.id !== gameId);
+  localStorage.setItem('ng_games', JSON.stringify(GAMES));
+  return true;
+}
+
+async function dbFetchReviews() {
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.from('reviews').select('*').order('created_at', { ascending: false });
+      if (!error && data) {
+        return data.map(r => ({
+          gameId: r.game_id,
+          userId: r.user_id || 'guest',
+          game: r.game_title,
+          name: r.user_name,
+          initials: r.user_name.split(' ').map(n => n[0]).join('').toUpperCase(),
+          color: r.color || '#00e5ff',
+          rating: Number(r.rating),
+          verified: true,
+          helpful: 0,
+          time: 'Just now',
+          text: r.text
+        }));
+      }
+    } catch (e) {
+      console.error('Supabase fetch reviews error:', e);
+    }
+  }
+  return JSON.parse(localStorage.getItem('ng_custom_reviews') || '[]');
+}
+
+async function dbSubmitReview(review) {
+  if (supabase) {
+    try {
+      const { error } = await supabase.from('reviews').insert([{
+        game_id: review.gameId,
+        user_name: review.name,
+        rating: review.rating,
+        text: review.text,
+        user_id: review.userId,
+        game_title: review.game,
+        color: review.color
+      }]);
+      if (!error) return true;
+      console.error('Supabase submit review error:', error);
+    } catch (e) {
+      console.error('Supabase submit review exception:', e);
+    }
+  }
+  const customReviews = JSON.parse(localStorage.getItem('ng_custom_reviews') || '[]');
+  customReviews.push(review);
+  localStorage.setItem('ng_custom_reviews', JSON.stringify(customReviews));
+  return true;
+}
+
+async function dbSubmitOrder(order) {
+  if (supabase) {
+    try {
+      const { error } = await supabase.from('orders').insert([{
+        id: order.id,
+        user_email: currentUser ? currentUser.email : 'guest@nightgamer.com',
+        user_name: currentUser ? currentUser.name : 'Guest User',
+        phone: order.phone,
+        address: order.address,
+        payment_method: order.paymentMethod,
+        grand_total: order.grandTotal,
+        items: order.items
+      }]);
+      if (!error) return true;
+      console.error('Supabase submit order error:', error);
+    } catch (e) {
+      console.error('Supabase submit order exception:', e);
+    }
+  }
+  const orders = JSON.parse(localStorage.getItem('ng_orders') || '[]');
+  orders.push(order);
+  localStorage.setItem('ng_orders', JSON.stringify(orders));
+  return true;
+}
+
 /* ═══════════════ DATA ═══════════════ */
 const GENRES = [
   { id: 'fps', name: 'FPS', cls: 'gc-fps', icon: '🔫', color: '#ff2d78', desc: 'Heart-pounding first-person shooters. Twitch reflexes required.', count: 62 },
@@ -1164,8 +1312,9 @@ function getGameReviews(id) {
   const g = GAMES.find(x => x.id === id);
   if (!g) return [];
   const baseReviews = REVIEW_DATA.filter(r => r.game === g.title);
-  const customReviews = JSON.parse(localStorage.getItem('ng_custom_reviews') || '[]');
-  const gameCustomReviews = customReviews.filter(r => r.gameId === id);
+  const localReviews = JSON.parse(localStorage.getItem('ng_custom_reviews') || '[]');
+  const cloudReviews = CLOUD_REVIEWS.filter(r => r.gameId === id);
+  const gameCustomReviews = [...localReviews.filter(r => r.gameId === id), ...cloudReviews];
   return [...gameCustomReviews.reverse(), ...baseReviews];
 }
 
@@ -1304,7 +1453,7 @@ function submitGameReview(id) {
   }
   
   const customReviews = JSON.parse(localStorage.getItem('ng_custom_reviews') || '[]');
-  const alreadyReviewed = customReviews.find(r => r.gameId === id && r.userId === currentUser.id);
+  const alreadyReviewed = customReviews.find(r => r.gameId === id && r.userId === currentUser.id) || CLOUD_REVIEWS.find(r => r.gameId === id && r.userId === currentUser.id);
   if (alreadyReviewed) {
     showToast('You have already reviewed this game.');
     return;
@@ -1325,8 +1474,7 @@ function submitGameReview(id) {
     text: text
   };
   
-  customReviews.push(newReview);
-  localStorage.setItem('ng_custom_reviews', JSON.stringify(customReviews));
+  dbSubmitReview(newReview);
   
   const allReviews = getGameReviews(id);
   const totalCount = allReviews.length;
@@ -1646,7 +1794,7 @@ function saveAdminGame(gameId) {
     GAMES.push(targetGame);
   }
 
-  localStorage.setItem('ng_games', JSON.stringify(GAMES));
+  dbSaveGame(targetGame);
   showToast(isNew ? '✓ Game added successfully!' : '✓ Game details updated!');
   
   // Update genre counts
@@ -1682,9 +1830,7 @@ function deleteAdminGame(gameId) {
   const ok = confirm(`Are you sure you want to permanently delete "${g.title}" from the catalog?`);
   if (!ok) return;
 
-  GAMES = GAMES.filter(x => x.id !== gameId);
-  localStorage.setItem('ng_games', JSON.stringify(GAMES));
-  
+  dbDeleteGame(gameId);
   showToast('🗑️ Game deleted successfully.');
   
   GENRES.forEach(gen => {
@@ -1883,6 +2029,63 @@ function setHeroSlide(idx) {
   heroTimer = setInterval(nextHeroSlide, 7000);
 }
 
+async function syncCloudData() {
+  if (!supabase) return;
+  try {
+    // 1. Fetch Cloud Games
+    const cloudGames = await dbFetchGames();
+    if (cloudGames && cloudGames.length > 0) {
+      GAMES = cloudGames;
+      
+      // Update genre counts
+      GENRES.forEach(gen => {
+        gen.count = GAMES.filter(x => x.genre === gen.id).length;
+      });
+      
+      // Re-render components with cloud games
+      initHeroCarousel();
+      renderGenreCards();
+      renderFooterGenres();
+      restoreAddedBtns();
+      
+      // If currently showing home page's genre grid, refresh it
+      const activeGenreGrid = document.getElementById('genreGrid');
+      if (activeGenreGrid) {
+        const activeHeader = document.querySelector('.sh .st');
+        if (activeHeader) {
+          const activeGenreName = activeHeader.textContent.replace(' TITLES', '').trim().toLowerCase();
+          const matchGenre = GENRES.find(g => g.name.toLowerCase() === activeGenreName);
+          if (matchGenre) {
+            let gamesList = GAMES.filter(x => x.genre === matchGenre.id);
+            activeGenreGrid.innerHTML = renderGameCards(gamesList);
+            restoreAddedBtns();
+          }
+        }
+      }
+    }
+    
+    // 2. Fetch Cloud Reviews
+    const cloudReviews = await dbFetchReviews();
+    if (cloudReviews) {
+      CLOUD_REVIEWS = cloudReviews;
+      
+      // Update in-memory reviews counter for games in GAMES
+      GAMES.forEach(g => {
+        const gameReviews = getGameReviews(g.id);
+        g.rev = gameReviews.length;
+        if (gameReviews.length > 0) {
+          g.rating = parseFloat((gameReviews.reduce((sum, r) => sum + r.rating, 0) / gameReviews.length).toFixed(1));
+        }
+      });
+      
+      // Re-trigger visual states that rely on game ratings
+      restoreAddedBtns();
+    }
+  } catch (e) {
+    console.error('Error syncing cloud database:', e);
+  }
+}
+
 /* ═══════════════ INIT ═══════════════ */
 function init() {
   if ('scrollRestoration' in history) {
@@ -1913,6 +2116,7 @@ function init() {
   updateCartUI();
   restoreAddedBtns();
   renderCartItems();
+  syncCloudData();
 }
 
 /* ═══════════════ GENRE CARDS ═══════════════ */
@@ -2658,7 +2862,6 @@ function placeOrd() {
 
   // Save order to local history
   if (currentUser) {
-    const orders = JSON.parse(localStorage.getItem('ng_orders') || '[]');
     const newOrder = {
       id: activeOrderId,
       userId: currentUser.id,
@@ -2670,8 +2873,7 @@ function placeOrd() {
       status: 'Processing',
       date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
     };
-    orders.push(newOrder);
-    localStorage.setItem('ng_orders', JSON.stringify(orders));
+    dbSubmitOrder(newOrder);
   }
 
   payStep = 5;
