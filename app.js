@@ -26,8 +26,14 @@ async function dbFetchGames() {
       }
       if (!error && data && data.length === 0) {
         // If table is empty, auto-seed with DEFAULT_GAMES
-        await supabase.from('games').insert(DEFAULT_GAMES);
+        const { error: seedError } = await supabase.from('games').insert(DEFAULT_GAMES);
+        if (seedError) {
+          console.error('Failed to seed Supabase database:', seedError);
+        }
         return DEFAULT_GAMES;
+      }
+      if (error) {
+        console.error('Supabase fetch query error:', error);
       }
     } catch (e) {
       console.error('Supabase fetch games error, falling back:', e);
