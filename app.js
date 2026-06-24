@@ -1,8 +1,8 @@
 /* ═══════════════ SUPABASE CLOUD DATABASE CONFIG ═══════════════ */
-// Paste your actual Supabase credentials here to make the website live on the cloud:
+// Paste your actual Supabase credentials here:
+
 const SUPABASE_URL = "https://hnftdcdodxdcuozlqnxl.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_ev5RGAiN9CLd1yHKMrQqWw_cXkgMC5U";
-
 let supabase = null;
 if (typeof window.supabase !== 'undefined' && SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
   try {
