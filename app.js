@@ -22,11 +22,20 @@ async function dbFetchGames() {
     try {
       const { data, error } = await supabase.from('games').select('*').order('id', { ascending: true });
       if (!error && data && data.length > 0) {
-        return data;
+        // Map data to guarantee rating and rev exist on the objects in the frontend
+        return data.map(g => ({
+          ...g,
+          rating: g.rating !== undefined && g.rating !== null ? Number(g.rating) : 4.8,
+          rev: g.rev !== undefined && g.rev !== null ? Number(g.rev) : 120
+        }));
       }
       if (!error && data && data.length === 0) {
-        // If table is empty, auto-seed with DEFAULT_GAMES
-        const { error: seedError } = await supabase.from('games').insert(DEFAULT_GAMES);
+        // Seed database. Strip rating and rev in case columns aren't in the schema
+        const seedingData = DEFAULT_GAMES.map(g => {
+          const { rating, rev, ...cleanGame } = g;
+          return cleanGame;
+        });
+        const { error: seedError } = await supabase.from('games').insert(seedingData);
         if (seedError) {
           console.error('Failed to seed Supabase database:', seedError);
         }
@@ -45,7 +54,8 @@ async function dbFetchGames() {
 async function dbSaveGame(game) {
   if (supabase) {
     try {
-      const { error } = await supabase.from('games').upsert([game]);
+      const { rating, rev, ...cleanGame } = game;
+      const { error } = await supabase.from('games').upsert([cleanGame]);
       if (!error) return true;
       console.error('Supabase save game error:', error);
     } catch (e) {
