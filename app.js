@@ -10,7 +10,7 @@ const GENRES = [
   { id: 'hor', name: 'Horror', cls: 'gc-hor', icon: '👻', color: '#ff1744', desc: 'Survive the darkness. Not for the faint-hearted.', count: 22 },
 ];
 
-const GAMES = [
+const DEFAULT_GAMES = [
   {
     id: 1, title: 'CALL OF DUTY: MW III', dev: 'Infinity Ward', pub: 'Activision', genre: 'fps', year: 2023, price: 3499, orig: 4499, rating: 4.6, rev: 18420, badge: 'hot',
     img: 'Images/Call of Duty Modern Warfare III/Store_GamesPDP_Hero01.png',
@@ -197,6 +197,8 @@ const GAMES = [
   },
 ];
 
+let GAMES = JSON.parse(localStorage.getItem('ng_games')) || DEFAULT_GAMES;
+
 let cart = JSON.parse(localStorage.getItem('ng_cart') || '[]');
 let orderAddress = JSON.parse(localStorage.getItem('ng_order_address') || 'null') || { name: '', email: '', phone: '', address1: '', address2: '', city: '', pin: '', state: '' };
 let curPage = 'home', transitioning = false, payStep = 1, payMethod = 'upi', selBank = '';
@@ -245,8 +247,20 @@ function openProfile(tab = 'overview') {
   profSkills = saved.skills || ['JavaScript', 'React', 'Node.js', 'CSS', 'Git'];
   profNotifs = saved.notifs || { newGames: true, orders: true, reviews: false, promo: true, security: true };
 
+  const toggleEl = document.getElementById('admin-view-toggle');
+  if (toggleEl) {
+    toggleEl.style.display = currentUser.isAdmin ? 'flex' : 'none';
+  }
+
   document.getElementById('prof-ovl').classList.add('open');
   document.body.style.overflow = 'hidden';
+  if (currentUser.isAdmin) {
+    switchAdminView('user');
+  } else {
+    // Make sure profile tabs are visible if not admin
+    const profTabs = document.querySelector('.prof-tabs');
+    if (profTabs) profTabs.style.display = 'flex';
+  }
   switchProfTab(tab);
 }
 
@@ -1317,12 +1331,360 @@ function submitGameReview(id) {
   }
 }
 
+/* ═══════════════ ADMIN DASHBOARD LOGIC ═══════════════ */
+let adminViewMode = 'user';
+let adminSearchQuery = '';
+
+function switchAdminView(view) {
+  adminViewMode = view;
+  const userBtn = document.getElementById('adm-toggle-user');
+  const adminBtn = document.getElementById('adm-toggle-admin');
+  const profTabs = document.querySelector('.prof-tabs');
+  const saveBar = document.getElementById('prof-save-bar');
+  
+  if (view === 'user') {
+    if (userBtn) userBtn.classList.add('active');
+    if (adminBtn) adminBtn.classList.remove('active');
+    if (profTabs) profTabs.style.display = 'flex';
+    switchProfTab(profTab);
+  } else {
+    if (userBtn) userBtn.classList.remove('active');
+    if (adminBtn) adminBtn.classList.add('active');
+    if (profTabs) profTabs.style.display = 'none';
+    if (saveBar) saveBar.style.display = 'none';
+    renderAdminTab();
+  }
+}
+
+function renderAdminTab() {
+  const body = document.getElementById('prof-body');
+  if (!body) return;
+  
+  const filtered = GAMES.filter(g => g.title.toLowerCase().includes(adminSearchQuery.toLowerCase()));
+  
+  const itemsHtml = filtered.map(g => `
+    <div class="adm-game-row" style="display:flex;align-items:center;gap:1rem;background:var(--surf);border:1px solid var(--br);border-radius:6px;padding:.75rem;margin-bottom:.5rem;text-align:left">
+      <img src="${g.img}" style="width:40px;height:55px;object-fit:cover;border-radius:4px;border:1px solid var(--br)">
+      <div style="flex:1">
+        <div style="font-size:.9rem;color:var(--tx);font-weight:bold">${g.title}</div>
+        <div style="font-size:.75rem;color:var(--tx2);margin-top:2px">${g.genre.toUpperCase()} · ${g.year} · ₹${g.price.toLocaleString()}</div>
+      </div>
+      <div style="display:flex;gap:.5rem">
+        <button class="paynow" style="padding:6px 12px;font-size:.78rem;clip-path:none;margin:0" onclick="openGameEditor(${g.id})">EDIT</button>
+        <button class="prof-discard-btn" style="padding:6px 12px;font-size:.78rem;margin:0" onclick="deleteAdminGame(${g.id})">DELETE</button>
+      </div>
+    </div>
+  `).join('');
+  
+  body.innerHTML = `
+    <div class="prof-section">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+        <div class="prof-sec-title" style="margin:0">🎮 Manage Catalog (${GAMES.length})</div>
+        <button class="paynow" style="width:auto;padding:8px 16px;font-size:.85rem" onclick="openGameEditor(null)">➕ ADD NEW GAME</button>
+      </div>
+      
+      <div class="fg" style="margin-bottom:1rem">
+        <input class="fin" id="admin-search-in" value="${adminSearchQuery}" placeholder="Search games by title..." oninput="adminSearchQuery=this.value;renderAdminTab()">
+      </div>
+      
+      <div style="max-height:400px;overflow-y:auto;padding-right:.25rem">
+        ${itemsHtml || `<div style="text-align:center;padding:2rem;color:var(--tx2);font-family:'Share Tech Mono',monospace;font-size:.75rem;letter-spacing:1px">NO MATCHING GAMES FOUND</div>`}
+      </div>
+    </div>
+  `;
+}
+
+function openGameEditor(gameId) {
+  const body = document.getElementById('prof-body');
+  if (!body) return;
+  
+  const isNew = gameId === null;
+  const g = isNew ? {
+    title: '', dev: '', pub: '', genre: 'fps', year: new Date().getFullYear(), price: '', orig: '', badge: '',
+    img: '', screens: [], video: '', desc: '', discs: '1 Disc', size: '50 GB', players: '1 Player',
+    tags: [], req: { OS: 'Windows 10 64-bit', CPU: 'Intel Core i5', RAM: '8 GB', GPU: 'NVIDIA GTX 1060', Storage: '50 GB' }
+  } : GAMES.find(x => x.id === gameId);
+
+  body.innerHTML = `
+    <div class="prof-section" style="text-align:left">
+      <div class="prof-sec-title">${isNew ? '➕ Add New Game' : '✏️ Edit Game: ' + g.title}</div>
+      
+      <div class="pf-group">
+        <label class="pf-label">Game Title *</label>
+        <input class="pf-input" id="ed-title" value="${g.title}" placeholder="Halo Infinite">
+      </div>
+      
+      <div class="pf-row">
+        <div class="pf-group">
+          <label class="pf-label">Developer *</label>
+          <input class="pf-input" id="ed-dev" value="${g.dev}" placeholder="343 Industries">
+        </div>
+        <div class="pf-group">
+          <label class="pf-label">Publisher *</label>
+          <input class="pf-input" id="ed-pub" value="${g.pub}" placeholder="Xbox Game Studios">
+        </div>
+      </div>
+      
+      <div class="pf-row">
+        <div class="pf-group">
+          <label class="pf-label">Genre *</label>
+          <select class="pf-select" id="ed-genre">
+            ${['fps', 'rpg', 'strategy', 'sports', 'simulation', 'adventure', 'racing', 'horror'].map(genre => `<option value="${genre}" ${g.genre === genre ? 'selected' : ''}>${genre.toUpperCase()}</option>`).join('')}
+          </select>
+        </div>
+        <div class="pf-group">
+          <label class="pf-label">Release Year *</label>
+          <input class="pf-input" id="ed-year" type="number" value="${g.year}" placeholder="2021">
+        </div>
+      </div>
+      
+      <div class="pf-row">
+        <div class="pf-group">
+          <label class="pf-label">Price (INR) *</label>
+          <input class="pf-input" id="ed-price" type="number" value="${g.price}" placeholder="2499">
+        </div>
+        <div class="pf-group">
+          <label class="pf-label">Original Price (optional)</label>
+          <input class="pf-input" id="ed-orig" type="number" value="${g.orig || ''}" placeholder="2999">
+        </div>
+      </div>
+      
+      <div class="pf-row">
+        <div class="pf-group">
+          <label class="pf-label">Badge</label>
+          <select class="pf-select" id="ed-badge">
+            <option value="" ${!g.badge ? 'selected' : ''}>None</option>
+            <option value="new" ${g.badge === 'new' ? 'selected' : ''}>New</option>
+            <option value="sale" ${g.badge === 'sale' ? 'selected' : ''}>Sale</option>
+            <option value="hot" ${g.badge === 'hot' ? 'selected' : ''}>Hot</option>
+          </select>
+        </div>
+        <div class="pf-group">
+          <label class="pf-label">Discs *</label>
+          <input class="pf-input" id="ed-discs" value="${g.discs}" placeholder="2 Discs">
+        </div>
+      </div>
+
+      <div class="pf-row">
+        <div class="pf-group">
+          <label class="pf-label">Install Size *</label>
+          <input class="pf-input" id="ed-size" value="${g.size}" placeholder="50 GB">
+        </div>
+        <div class="pf-group">
+          <label class="pf-label">Players *</label>
+          <input class="pf-input" id="ed-players" value="${g.players}" placeholder="1 Player">
+        </div>
+      </div>
+      
+      <div class="pf-group">
+        <label class="pf-label">Cover Image URL *</label>
+        <input class="pf-input" id="ed-img" value="${g.img}" placeholder="Images/cover.jpg or web url">
+      </div>
+      
+      <div class="pf-group">
+        <label class="pf-label">Screenshots URLs (comma separated)</label>
+        <input class="pf-input" id="ed-screens" value="${g.screens ? g.screens.join(', ') : ''}" placeholder="url1, url2">
+      </div>
+      
+      <div class="pf-group">
+        <label class="pf-label">Video Trailer URL (YouTube link)</label>
+        <input class="pf-input" id="ed-video" value="${g.video || ''}" placeholder="https://youtu.be/...">
+      </div>
+      
+      <div class="pf-group">
+        <label class="pf-label">Game Description *</label>
+        <textarea class="pf-input" id="ed-desc" style="height:80px;resize:none" placeholder="Describe the game experience...">${g.desc}</textarea>
+      </div>
+      
+      <div class="pf-group">
+        <label class="pf-label">Tags (comma separated)</label>
+        <input class="pf-input" id="ed-tags" value="${g.tags ? g.tags.join(', ') : ''}" placeholder="Action, Shooter, Sci-Fi">
+      </div>
+      
+      <div style="font-family:'Share Tech Mono',monospace;font-size:.85rem;letter-spacing:1px;color:var(--a);margin:1.25rem 0 .5rem">// MINIMUM SYSTEM REQUIREMENTS</div>
+      
+      <div class="pf-row">
+        <div class="pf-group">
+          <label class="pf-label">OS *</label>
+          <input class="pf-input" id="ed-req-os" value="${g.req?.OS || ''}" placeholder="Windows 10 64-bit">
+        </div>
+        <div class="pf-group">
+          <label class="pf-label">CPU *</label>
+          <input class="pf-input" id="ed-req-cpu" value="${g.req?.CPU || ''}" placeholder="Intel Core i5">
+        </div>
+      </div>
+      
+      <div class="pf-row">
+        <div class="pf-group">
+          <label class="pf-label">RAM *</label>
+          <input class="pf-input" id="ed-req-ram" value="${g.req?.RAM || ''}" placeholder="8 GB">
+        </div>
+        <div class="pf-group">
+          <label class="pf-label">GPU *</label>
+          <input class="pf-input" id="ed-req-gpu" value="${g.req?.GPU || ''}" placeholder="NVIDIA GTX 1060">
+        </div>
+      </div>
+      
+      <div class="pf-group">
+        <label class="pf-label">Storage *</label>
+        <input class="pf-input" id="ed-req-storage" value="${g.req?.Storage || ''}" placeholder="50 GB">
+      </div>
+      
+      <div style="display:flex;gap:.75rem;margin-top:1.5rem">
+        <button class="prof-discard-btn" style="flex:1" onclick="renderAdminTab()">CANCEL</button>
+        <button class="paynow" style="flex:2" onclick="saveAdminGame(${gameId})">SAVE GAME</button>
+      </div>
+    </div>
+  `;
+}
+
+function saveAdminGame(gameId) {
+  const title = document.getElementById('ed-title')?.value.trim();
+  const dev = document.getElementById('ed-dev')?.value.trim();
+  const pub = document.getElementById('ed-pub')?.value.trim();
+  const genre = document.getElementById('ed-genre')?.value;
+  const year = parseInt(document.getElementById('ed-year')?.value) || new Date().getFullYear();
+  const price = parseInt(document.getElementById('ed-price')?.value) || 0;
+  const origVal = document.getElementById('ed-orig')?.value.trim();
+  const orig = origVal ? parseInt(origVal) : null;
+  const badge = document.getElementById('ed-badge')?.value || null;
+  const discs = document.getElementById('ed-discs')?.value.trim();
+  const size = document.getElementById('ed-size')?.value.trim();
+  const players = document.getElementById('ed-players')?.value.trim();
+  const img = document.getElementById('ed-img')?.value.trim();
+  const screensStr = document.getElementById('ed-screens')?.value.trim();
+  const screens = screensStr ? screensStr.split(',').map(s => s.trim()).filter(Boolean) : [];
+  const video = document.getElementById('ed-video')?.value.trim();
+  const desc = document.getElementById('ed-desc')?.value.trim();
+  const tagsStr = document.getElementById('ed-tags')?.value.trim();
+  const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()).filter(Boolean) : [];
+  
+  const reqOS = document.getElementById('ed-req-os')?.value.trim();
+  const reqCPU = document.getElementById('ed-req-cpu')?.value.trim();
+  const reqRAM = document.getElementById('ed-req-ram')?.value.trim();
+  const reqGPU = document.getElementById('ed-req-gpu')?.value.trim();
+  const reqStorage = document.getElementById('ed-req-storage')?.value.trim();
+
+  if (!title || !dev || !pub || !genre || !price || !img || !desc || !discs || !size || !players || !reqOS || !reqCPU || !reqRAM || !reqGPU || !reqStorage) {
+    showToast('Please fill out all required fields marked with *');
+    return;
+  }
+
+  const isNew = gameId === null;
+  let targetGame = null;
+  
+  if (isNew) {
+    const nextId = GAMES.length ? Math.max(...GAMES.map(x => x.id)) + 1 : 1;
+    targetGame = { id: nextId, rating: 5.0, rev: 1 };
+  } else {
+    targetGame = GAMES.find(x => x.id === gameId);
+  }
+
+  targetGame.title = title;
+  targetGame.dev = dev;
+  targetGame.pub = pub;
+  targetGame.genre = genre;
+  targetGame.year = year;
+  targetGame.price = price;
+  targetGame.orig = orig;
+  targetGame.badge = badge;
+  targetGame.discs = discs;
+  targetGame.size = size;
+  targetGame.players = players;
+  targetGame.img = img;
+  targetGame.screens = screens;
+  targetGame.video = video;
+  targetGame.desc = desc;
+  targetGame.tags = tags;
+  targetGame.req = { OS: reqOS, CPU: reqCPU, RAM: reqRAM, GPU: reqGPU, Storage: reqStorage };
+
+  if (isNew) {
+    GAMES.push(targetGame);
+  }
+
+  localStorage.setItem('ng_games', JSON.stringify(GAMES));
+  showToast(isNew ? '✓ Game added successfully!' : '✓ Game details updated!');
+  
+  // Update genre counts
+  GENRES.forEach(gen => {
+    gen.count = GAMES.filter(x => x.genre === gen.id).length;
+  });
+  
+  renderGenreCards();
+  renderFooterGenres();
+  
+  const activeGenreGrid = document.getElementById('genreGrid');
+  if (activeGenreGrid) {
+    const activeHeader = document.querySelector('.sh .st');
+    if (activeHeader) {
+      const activeGenreName = activeHeader.textContent.replace(' TITLES', '').trim().toLowerCase();
+      const matchGenre = GENRES.find(g => g.name.toLowerCase() === activeGenreName);
+      if (matchGenre) {
+        let gamesList = GAMES.filter(x => x.genre === matchGenre.id);
+        activeGenreGrid.innerHTML = renderGameCards(gamesList);
+        restoreAddedBtns();
+      }
+    }
+  }
+
+  renderAdminTab();
+}
+
+function deleteAdminGame(gameId) {
+  const g = GAMES.find(x => x.id === gameId);
+  if (!g) return;
+  
+  const ok = confirm(`Are you sure you want to permanently delete "${g.title}" from the catalog?`);
+  if (!ok) return;
+
+  GAMES = GAMES.filter(x => x.id !== gameId);
+  localStorage.setItem('ng_games', JSON.stringify(GAMES));
+  
+  showToast('🗑️ Game deleted successfully.');
+  
+  GENRES.forEach(gen => {
+    gen.count = GAMES.filter(x => x.genre === gen.id).length;
+  });
+  
+  renderGenreCards();
+  renderFooterGenres();
+  
+  const activeGenreGrid = document.getElementById('genreGrid');
+  if (activeGenreGrid) {
+    const activeHeader = document.querySelector('.sh .st');
+    if (activeHeader) {
+      const activeGenreName = activeHeader.textContent.replace(' TITLES', '').trim().toLowerCase();
+      const matchGenre = GENRES.find(g => g.name.toLowerCase() === activeGenreName);
+      if (matchGenre) {
+        let gamesList = GAMES.filter(x => x.genre === matchGenre.id);
+        activeGenreGrid.innerHTML = renderGameCards(gamesList);
+        restoreAddedBtns();
+      }
+    }
+  }
+
+  renderAdminTab();
+}
+
 /* ═══════════════ INIT ═══════════════ */
 function init() {
   if ('scrollRestoration' in history) {
     history.scrollRestoration = 'manual';
   }
   window.scrollTo(0, 0);
+
+  // Pre-seed admin credentials if not present
+  const users = JSON.parse(localStorage.getItem('nexus_users') || '[]');
+  if (!users.find(u => u.email === 'adityamazire510@gmail.com')) {
+    users.push({
+      id: 'admin-user',
+      name: 'Admin Aditya',
+      email: 'adityamazire510@gmail.com',
+      pw: btoa('Adi@tya510')
+    });
+    localStorage.setItem('nexus_users', JSON.stringify(users));
+  }
+
   loadCustomRatings();
   renderGenreCards();
   renderFooterGenres();
@@ -2356,6 +2718,9 @@ function doRegister() {
 }
 
 function completeLogin(user) {
+  if (user.email === 'adityamazire510@gmail.com') {
+    user.isAdmin = true;
+  }
   currentUser = user;
   localStorage.setItem('nexus_current_user', JSON.stringify(user));
   closeAuth();
@@ -2482,5 +2847,10 @@ window.toggleWish = toggleWish;
 window.switchPdpTab = switchPdpTab;
 window.submitGameReview = submitGameReview;
 window.setStarRatingInput = setStarRatingInput;
+window.switchAdminView = switchAdminView;
+window.renderAdminTab = renderAdminTab;
+window.openGameEditor = openGameEditor;
+window.saveAdminGame = saveAdminGame;
+window.deleteAdminGame = deleteAdminGame;
 
 init();

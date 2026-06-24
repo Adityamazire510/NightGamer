@@ -4398,3 +4398,46 @@ footer {
   transform: scale(1.25);
 }
 
+/* Admin view toggle inside Profile Modal */
+.admin-view-toggle {
+  display: flex;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--br);
+  border-radius: 8px;
+  padding: 4px;
+  margin: 1rem 1.5rem;
+  gap: 4px;
+}
+.adm-toggle-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--tx2);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.adm-toggle-btn:hover {
+  color: var(--tx);
+}
+.adm-toggle-btn.active {
+  background: var(--a);
+  color: #0b0e14;
+  font-weight: bold;
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+}
+
+/* Admin Dashboard list items */
+.adm-game-row {
+  transition: border-color 0.3s, background 0.3s;
+}
+.adm-game-row:hover {
+  border-color: var(--a);
+  background: rgba(0, 229, 255, 0.02) !important;
+}
+

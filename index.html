@@ -170,6 +170,11 @@
         </div>
         <button class="prof-close" onclick="closeProfile()">✕</button>
       </div>
+      <!-- Admin View Toggle Tabs -->
+      <div class="admin-view-toggle" id="admin-view-toggle" style="display:none">
+        <button class="adm-toggle-btn active" id="adm-toggle-user" onclick="switchAdminView('user')">👤 Normal User</button>
+        <button class="adm-toggle-btn" id="adm-toggle-admin" onclick="switchAdminView('admin')">🔑 Admin Tab</button>
+      </div>
       <div class="prof-tabs">
         <button class="prof-tab active" id="ptab-overview" onclick="switchProfTab('overview')">Overview</button>
         <button class="prof-tab" id="ptab-edit" onclick="switchProfTab('edit')">Edit Profile</button>
