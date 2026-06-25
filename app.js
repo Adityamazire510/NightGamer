@@ -162,6 +162,22 @@ async function dbSubmitOrder(order) {
   return true;
 }
 
+async function dbRegisterUser(newUser) {
+  if (supabase) {
+    try {
+      const { error } = await supabase.from('users').insert([newUser]);
+      if (!error) return true;
+      console.error('Supabase register user error:', error);
+    } catch (e) {
+      console.error('Supabase register user exception:', e);
+    }
+  }
+  const users = JSON.parse(localStorage.getItem('nexus_users') || '[]');
+  users.push(newUser);
+  localStorage.setItem('nexus_users', JSON.stringify(users));
+  return true;
+}
+
 /* ═══════════════ DATA ═══════════════ */
 const GENRES = [
   { id: 'fps', name: 'FPS', cls: 'gc-fps', icon: '🔫', color: '#ff2d78', desc: 'Heart-pounding first-person shooters. Twitch reflexes required.', count: 62 },
@@ -3115,24 +3131,39 @@ function submitSocialLogin() {
   }, 1000);
 }
 
-function doLogin() {
+async function doLogin() {
   const email = (document.getElementById('li-email')?.value || '').trim().toLowerCase();
   const pw = document.getElementById('li-pw')?.value || '';
   if (!email || !pw) { showAuthErr('login-err', 'Please enter your email and password.'); return; }
 
-  const users = JSON.parse(localStorage.getItem('nexus_users') || '[]');
-  const found = users.find(u => u.email === email && u.pw === btoa(pw));
+  let found = null;
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.from('users').select('*').eq('email', email).eq('pw', btoa(pw));
+      if (!error && data && data.length > 0) {
+        found = data[0];
+      }
+    } catch (e) {
+      console.error('Supabase login error:', e);
+    }
+  }
+
+  if (!found) {
+    const users = JSON.parse(localStorage.getItem('nexus_users') || '[]');
+    found = users.find(u => u.email === email && u.pw === btoa(pw));
+  }
+
   if (!found) { showAuthErr('login-err', 'Invalid email or password. Try signing up or use a social login.'); return; }
 
   const user = {
     id: found.id, name: found.name, email: found.email,
     initials: found.name.split(' ').map(n => n[0]).join('').toUpperCase(),
-    color: '#00e5ff', provider: 'email'
+    color: found.color || '#00e5ff', provider: 'email'
   };
   completeLogin(user);
 }
 
-function doRegister() {
+async function doRegister() {
   const name = (document.getElementById('rg-name')?.value || '').trim();
   const email = (document.getElementById('rg-email')?.value || '').trim().toLowerCase();
   const pw = document.getElementById('rg-pw')?.value || '';
@@ -3141,17 +3172,41 @@ function doRegister() {
   if (!email || !email.includes('@')) { showAuthErr('reg-err', 'Please enter a valid email address.'); return; }
   if (pw.length < 6) { showAuthErr('reg-err', 'Password must be at least 6 characters.'); return; }
 
-  const users = JSON.parse(localStorage.getItem('nexus_users') || '[]');
-  if (users.find(u => u.email === email)) { showAuthErr('reg-err', 'This email is already registered. Try signing in.'); return; }
+  let emailExists = false;
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.from('users').select('email').eq('email', email);
+      if (!error && data && data.length > 0) {
+        emailExists = true;
+      }
+    } catch (e) {
+      console.error('Supabase duplicate email check error:', e);
+    }
+  }
 
-  const newUser = { id: 'local-' + Date.now(), name, email, pw: btoa(pw) };
-  users.push(newUser);
-  localStorage.setItem('nexus_users', JSON.stringify(users));
+  if (!emailExists) {
+    const users = JSON.parse(localStorage.getItem('nexus_users') || '[]');
+    if (users.find(u => u.email === email)) {
+      emailExists = true;
+    }
+  }
+
+  if (emailExists) { showAuthErr('reg-err', 'This email is already registered. Try signing in.'); return; }
+
+  const newUser = { 
+    id: 'local-' + Date.now(), 
+    name, 
+    email, 
+    pw: btoa(pw),
+    color: '#7b2fff'
+  };
+
+  await dbRegisterUser(newUser);
 
   const user = {
     id: newUser.id, name, email,
     initials: name.split(' ').map(n => n[0]).join('').toUpperCase(),
-    color: '#7b2fff', provider: 'email'
+    color: newUser.color, provider: 'email'
   };
   completeLogin(user);
 }
