@@ -1,5 +1,6 @@
 /* ═══════════════ SUPABASE CLOUD DATABASE CONFIG ═══════════════ */
 // Paste your actual Supabase credentials here:
+// Admin Credentials: Email: adityamazire510@gmail.com | Password: Adi@tya510
 
 const SUPABASE_URL = "https://hnftdcdodxdcuozlqnxl.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhuZnRkY2RvZHhkY3VvemxxbnhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMTQ1MjksImV4cCI6MjA5Nzg5MDUyOX0.VbCmw54fuW5pwSddsSL_laRhnBaeYqrpiUYXjRdqxQM";
