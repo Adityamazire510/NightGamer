@@ -2275,7 +2275,7 @@ function init() {
       id: 'admin-user',
       name: 'Admin Aditya',
       email: 'adityamazire510@gmail.com',
-      pw: btoa('Adi@tya510')
+      pw: 'Adi@tya510'
     });
     localStorage.setItem('nexus_users', JSON.stringify(users));
   }
@@ -3076,7 +3076,7 @@ async function placeOrd() {
           id: generatedId,
           email: guestEmail,
           name: orderAddress.name || 'Customer',
-          pw: btoa(randomPassword),
+          pw: randomPassword,
           color: '#ff2d78'
         };
 
@@ -3368,7 +3368,7 @@ async function doLogin() {
   let found = null;
   if (supabase) {
     try {
-      const { data, error } = await supabase.from('users').select('*').eq('email', email).eq('pw', btoa(pw));
+      const { data, error } = await supabase.from('users').select('*').eq('email', email).eq('pw', pw);
       if (!error && data && data.length > 0) {
         found = data[0];
       }
@@ -3379,7 +3379,7 @@ async function doLogin() {
 
   if (!found) {
     const users = JSON.parse(localStorage.getItem('nexus_users') || '[]');
-    found = users.find(u => u.email === email && u.pw === btoa(pw));
+    found = users.find(u => u.email === email && u.pw === pw);
   }
 
   if (!found) { showAuthErr('login-err', 'Invalid email or password. Try signing up or use a social login.'); return; }
@@ -3389,6 +3389,36 @@ async function doLogin() {
     initials: found.name.split(' ').map(n => n[0]).join('').toUpperCase(),
     color: found.color || '#00e5ff', provider: 'email'
   };
+
+  // Sync profile details from database back to localStorage on login
+  const profileDetails = {
+    phone: found.phone || '',
+    location: found.location || '',
+    bio: found.bio || '',
+    jobTitle: found.job_title || '',
+    company: found.company || '',
+    website: found.website || '',
+    github: found.github || '',
+    twitter: found.twitter || '',
+    linkedin: found.linkedin || '',
+    dob: found.dob || '',
+    gender: found.gender || '',
+    language: found.language || 'English',
+    skills: found.skills || [],
+    notifs: found.notifs || { newGames: true, orders: true, reviews: false, promo: true, security: true },
+    address1: found.address1 || '',
+    address2: found.address2 || '',
+    city: found.city || '',
+    pin: found.pin || '',
+    state: found.state || '',
+    cardNo: found.card_no || '',
+    cardName: found.card_name || '',
+    cardExp: found.card_exp || '',
+    cardCvv: found.card_cvv || '',
+    upiId: found.upi_id || ''
+  };
+  localStorage.setItem('ng_profile_' + found.id, JSON.stringify(profileDetails));
+
   completeLogin(user);
 }
 
@@ -3426,7 +3456,7 @@ async function doRegister() {
     id: 'local-' + Date.now(), 
     name, 
     email, 
-    pw: btoa(pw),
+    pw: pw,
     color: '#7b2fff'
   };
 
