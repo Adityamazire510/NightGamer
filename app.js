@@ -398,6 +398,7 @@ let orderAddress = JSON.parse(localStorage.getItem('ng_order_address') || 'null'
 let curPage = 'home', transitioning = false, payStep = 1, payMethod = 'upi', selBank = '';
 let payCardNo = '', payCardName = '', payCardExp = '', payCardCvv = '', payUpiId = '', payUpiApp = '';
 let activeOrderId = '';
+let guestAutoAccount = null;
 
 /* ═══════════════ PROFILE SYSTEM ═══════════════ */
 const AVATAR_COLORS = ['#00e5ff', '#ff2d78', '#7b2fff', '#ffb800', '#00ff88', '#ff6b35', '#e040fb', '#ff1744'];
@@ -983,7 +984,7 @@ function confirmDelete() {
   }
 }
 
-function saveProfile() {
+async function saveProfile() {
   const oldSaved = JSON.parse(localStorage.getItem('ng_profile_' + currentUser.id) || '{}');
   const saved = {
     ...oldSaved,
@@ -1038,12 +1039,72 @@ function saveProfile() {
   updateNavAuth();
 
   if (profTab === 'security') {
+    const curPw = document.getElementById('pw-cur')?.value;
     const newPw = document.getElementById('pw-new')?.value;
     const confPw = document.getElementById('pw-conf')?.value;
-    if (newPw && newPw !== confPw) { showToast('Passwords do not match!'); return; }
-    if (newPw && newPw.length < 6) { showToast('Password must be at least 6 characters'); return; }
-    if (newPw) showToast('✓ Password updated successfully!');
-    else showToast('✓ Security settings saved!');
+
+    if (newPw) {
+      if (!curPw) { showToast('Please enter current password!'); return; }
+      if (newPw !== confPw) { showToast('New passwords do not match!'); return; }
+      if (newPw.length < 6) { showToast('New password must be at least 6 characters!'); return; }
+
+      // Verify current password
+      let isVerified = false;
+      if (supabase) {
+        try {
+          const { data, error } = await supabase.from('users').select('pw').eq('email', currentUser.email);
+          if (!error && data && data.length > 0) {
+            if (data[0].pw === btoa(curPw)) {
+              isVerified = true;
+            }
+          }
+        } catch (e) {
+          console.error('Failed to verify current password in Supabase:', e);
+        }
+      } else {
+        const users = JSON.parse(localStorage.getItem('nexus_users') || '[]');
+        const localU = users.find(u => u.email === currentUser.email);
+        if (localU && localU.pw === btoa(curPw)) {
+          isVerified = true;
+        }
+      }
+
+      if (!isVerified) {
+        showToast('Incorrect current password!');
+        return;
+      }
+
+      // Update password
+      if (supabase) {
+        try {
+          const { error } = await supabase.from('users').update({ pw: btoa(newPw) }).eq('email', currentUser.email);
+          if (error) {
+            showToast('Failed to update password in database: ' + error.message);
+            return;
+          }
+        } catch (e) {
+          console.error('Failed to update password in Supabase:', e);
+          showToast('Failed to update password in database');
+          return;
+        }
+      }
+
+      const users = JSON.parse(localStorage.getItem('nexus_users') || '[]');
+      const idx = users.findIndex(u => u.email === currentUser.email);
+      if (idx !== -1) {
+        users[idx].pw = btoa(newPw);
+        localStorage.setItem('nexus_users', JSON.stringify(users));
+      }
+
+      // Clear inputs
+      if (document.getElementById('pw-cur')) document.getElementById('pw-cur').value = '';
+      if (document.getElementById('pw-new')) document.getElementById('pw-new').value = '';
+      if (document.getElementById('pw-conf')) document.getElementById('pw-conf').value = '';
+
+      showToast('✓ Password updated successfully!');
+    } else {
+      showToast('✓ Security settings saved!');
+    }
   } else {
     showToast('✓ Profile saved!');
   }
@@ -2614,6 +2675,7 @@ function closePay(e) {
   } else if (payStep === 3) {
     savePaymentInputs();
   }
+  guestAutoAccount = null;
   document.getElementById('pmovl').classList.remove('open');
   document.body.style.overflow = '';
 }
@@ -2710,6 +2772,23 @@ function renderPay() {
   } else if (payStep === 5) {
     const oid = activeOrderId || ('NXG' + Date.now().toString(36).toUpperCase());
     const pml = { upi: 'UPI Payment', card: 'Card Payment', nb: 'Net Banking', cod: 'Cash on Delivery' };
+    
+    let autoAccHTML = '';
+    if (guestAutoAccount) {
+      autoAccHTML = `
+        <div class="auto-acc-card" style="margin: 1.25rem 0; background: rgba(0,229,255,0.06); border: 1px dashed rgba(0,229,255,0.3); border-radius: 8px; padding: 16px; text-align: left;">
+          <div style="font-weight:700; color:#00e5ff; font-size:.9rem; margin-bottom:.4rem; display:flex; align-items:center; gap:6px">
+            <span>👤 ACCOUNT CREATED AUTOMATICALLY!</span>
+          </div>
+          <p style="font-size:.78rem; color:var(--tx2); margin:0 0 .75rem 0; line-height:1.4">We've created a member account for you so you can log in, track your order, and manage your profile in the future.</p>
+          <div style="display:flex; flex-direction:column; gap:6px; font-family:'Share Tech Mono', monospace; font-size:.85rem; background:rgba(0,0,0,0.4); padding:10px; border-radius:6px; border: 1px solid var(--br)">
+            <div><span style="color:var(--tx2)">Username (Email):</span> <span style="color:#fff; font-weight:bold">${guestAutoAccount.email}</span></div>
+            <div><span style="color:var(--tx2)">Temporary Password:</span> <span style="color:#00ff88; font-weight:bold; letter-spacing:1px">${guestAutoAccount.password}</span></div>
+          </div>
+          <p style="font-size:.72rem; color:var(--tx2); margin:8px 0 0 0; text-align:center">⚠️ Please save your password! You can change it anytime in your Profile settings.</p>
+        </div>`;
+    }
+
     pb.innerHTML = `
       <div class="succ">
         <span class="sico2">🎉</span>
@@ -2722,6 +2801,7 @@ function renderPay() {
           <div class="sdr"><span class="sdl">Payment</span><span class="sdv">${pml[payMethod]}</span></div>
           <div class="sdr"><span class="sdl">Est. Delivery</span><span class="sdv" style="color:#00ff88">3-5 Business Days</span></div>
         </div>
+        ${autoAccHTML}
         <button class="paynow" onclick="closePay();clearCart()">CONTINUE SHOPPING</button>
       </div>`;
   }
@@ -2865,7 +2945,7 @@ function valPayment() {
   renderPay();
 }
 
-function placeOrd() {
+async function placeOrd() {
   activeOrderId = 'NXG' + Date.now().toString(36).toUpperCase();
   
   const sub = cart.reduce((s, i) => s + i.price, 0);
@@ -2875,6 +2955,72 @@ function placeOrd() {
   
   const fullAddress = `${orderAddress.address1}${orderAddress.address2 ? ', ' + orderAddress.address2 : ''}, ${orderAddress.city} - ${orderAddress.pin}, ${orderAddress.state}`;
   
+  // Guest purchase - auto account creation concept
+  if (!currentUser) {
+    const guestEmail = (orderAddress.email || '').trim().toLowerCase();
+    if (guestEmail) {
+      let existingUser = null;
+      if (supabase) {
+        try {
+          const { data, error } = await supabase.from('users').select('*').eq('email', guestEmail);
+          if (!error && data && data.length > 0) {
+            existingUser = data[0];
+          }
+        } catch (e) {
+          console.error('Failed to check existing user:', e);
+        }
+      } else {
+        const users = JSON.parse(localStorage.getItem('nexus_users') || '[]');
+        existingUser = users.find(u => u.email === guestEmail);
+      }
+
+      if (existingUser) {
+        // Auto-login existing user
+        currentUser = {
+          id: existingUser.id,
+          name: existingUser.name,
+          email: existingUser.email,
+          initials: existingUser.name.split(' ').map(n => n[0]).join('').toUpperCase(),
+          color: existingUser.color || '#7b2fff',
+          provider: 'email'
+        };
+        localStorage.setItem('nexus_current_user', JSON.stringify(currentUser));
+        updateNavAuth();
+      } else {
+        // Generate random 8-character password
+        const randomPassword = 'NG-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+        const generatedId = 'USR' + Date.now().toString(36).toUpperCase();
+        const newUser = {
+          id: generatedId,
+          email: guestEmail,
+          name: orderAddress.name || 'Customer',
+          pw: btoa(randomPassword),
+          color: '#ff2d78'
+        };
+
+        await dbRegisterUser(newUser);
+
+        // Save auto-created account credentials for rendering on success screen
+        guestAutoAccount = {
+          email: newUser.email,
+          password: randomPassword
+        };
+
+        // Auto-login newly created user
+        currentUser = {
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+          initials: newUser.name.split(' ').map(n => n[0]).join('').toUpperCase(),
+          color: newUser.color,
+          provider: 'email'
+        };
+        localStorage.setItem('nexus_current_user', JSON.stringify(currentUser));
+        updateNavAuth();
+      }
+    }
+  }
+
   const orderDetails = {
     email: orderAddress.email || 'adityamazire510@gmail.com',
     name: orderAddress.name || 'Customer',
@@ -2892,7 +3038,7 @@ function placeOrd() {
     body: JSON.stringify(orderDetails)
   }).catch(err => console.error('Failed to send order email:', err));
 
-  // Save order to local history
+  // Save order to local history (will now link to either existing or auto-created user ID)
   if (currentUser) {
     const newOrder = {
       id: activeOrderId,
@@ -2913,6 +3059,7 @@ function placeOrd() {
 }
 
 function clearCart() {
+  guestAutoAccount = null;
   cart = [];
   localStorage.removeItem('ng_cart');
   GAMES.forEach(g => {
