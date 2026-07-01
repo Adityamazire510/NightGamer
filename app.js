@@ -406,12 +406,93 @@ const AVATAR_COLORS = ['#00e5ff', '#ff2d78', '#7b2fff', '#ffb800', '#00ff88', '#
 const SKILL_PRESETS = ['JavaScript', 'TypeScript', 'React', 'Vue', 'Node.js', 'Python', 'CSS', 'HTML', 'SQL', 'Git', 'Docker', 'AWS', 'Figma', 'REST APIs', 'GraphQL'];
 
 let profTab = 'overview';
+let profStats = { gamesOwned: 0, ordersCount: 0, reviewsCount: 0 };
 let profDraft = {};
 let profSkills = [];
 let profNotifs = {};
 
 function openProfile(tab = 'overview') {
   if (!currentUser) { openAuth(); return; }
+
+  // 1. Initial stats from localStorage
+  const localOrders = JSON.parse(localStorage.getItem('ng_orders') || '[]');
+  const myLocalOrders = localOrders.filter(o => o.userId === currentUser.id || o.user_email === currentUser.email);
+  const localReviews = JSON.parse(localStorage.getItem('ng_custom_reviews') || '[]');
+  const myLocalReviews = localReviews.filter(r => r.userId === currentUser.id);
+  
+  const ownedSet = new Set();
+  myLocalOrders.forEach(o => {
+    if (o.items && Array.isArray(o.items)) {
+      o.items.forEach(item => {
+        if (item.title) ownedSet.add(item.title);
+      });
+    }
+  });
+
+  profStats = {
+    gamesOwned: ownedSet.size,
+    ordersCount: myLocalOrders.length,
+    reviewsCount: myLocalReviews.length
+  };
+
+  // 2. Async fetch stats from Supabase in the background
+  if (supabase) {
+    (async () => {
+      try {
+        const [ordersRes, reviewsRes] = await Promise.all([
+          supabase.from('orders').select('*').eq('user_email', currentUser.email),
+          supabase.from('reviews').select('*').eq('user_id', currentUser.id)
+        ]);
+
+        if (!ordersRes.error && ordersRes.data) {
+          const dbOrders = ordersRes.data;
+          const local = JSON.parse(localStorage.getItem('ng_orders') || '[]');
+          const filtered = local.filter(o => o.userId !== currentUser.id && o.user_email !== currentUser.email);
+          
+          const formattedDbOrders = dbOrders.map(o => ({
+            id: o.id,
+            userId: currentUser.id,
+            user_email: o.user_email,
+            items: typeof o.items === 'string' ? JSON.parse(o.items) : o.items,
+            grandTotal: o.grand_total,
+            address: o.address,
+            phone: o.phone,
+            paymentMethod: o.payment_method,
+            status: o.status || 'Processing',
+            date: o.created_at ? new Date(o.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+          }));
+          localStorage.setItem('ng_orders', JSON.stringify([...filtered, ...formattedDbOrders]));
+
+          const owned = new Set();
+          formattedDbOrders.forEach(o => {
+            if (o.items && Array.isArray(o.items)) {
+              o.items.forEach(item => {
+                if (item.title) owned.add(item.title);
+              });
+            }
+          });
+
+          profStats.gamesOwned = owned.size;
+          profStats.ordersCount = formattedDbOrders.length;
+        }
+
+        if (!reviewsRes.error && reviewsRes.data) {
+          profStats.reviewsCount = reviewsRes.data.length;
+        }
+
+        // Live update overview counts if user is currently looking at overview tab
+        const valEls = document.querySelectorAll('.prof-stat-val');
+        if (valEls.length === 3 && profTab === 'overview') {
+          valEls[0].textContent = profStats.gamesOwned;
+          valEls[1].textContent = profStats.ordersCount;
+          valEls[2].textContent = profStats.reviewsCount;
+        }
+      } catch (e) {
+        console.error('Failed to sync profile stats:', e);
+      }
+    })();
+  }
+
   const saved = JSON.parse(localStorage.getItem('ng_profile_' + currentUser.id) || '{}');
   profDraft = {
     name: currentUser.name,
@@ -520,9 +601,9 @@ function renderProfOverview() {
       </div>
     </div>
     <div class="prof-stats">
-      <div class="prof-stat-box" style="--psb-col:#00e5ff"><div class="prof-stat-val">12</div><div class="prof-stat-lbl">Games Owned</div></div>
-      <div class="prof-stat-box" style="--psb-col:#ff2d78"><div class="prof-stat-val">3</div><div class="prof-stat-lbl">Orders</div></div>
-      <div class="prof-stat-box" style="--psb-col:#00ff88"><div class="prof-stat-val">7</div><div class="prof-stat-lbl">Reviews</div></div>
+      <div class="prof-stat-box" style="--psb-col:#00e5ff"><div class="prof-stat-val">${profStats.gamesOwned}</div><div class="prof-stat-lbl">Games Owned</div></div>
+      <div class="prof-stat-box" style="--psb-col:#ff2d78"><div class="prof-stat-val">${profStats.ordersCount}</div><div class="prof-stat-lbl">Orders</div></div>
+      <div class="prof-stat-box" style="--psb-col:#00ff88"><div class="prof-stat-val">${profStats.reviewsCount}</div><div class="prof-stat-lbl">Reviews</div></div>
     </div>
     <div class="prof-section">
       <div class="prof-sec-title">👤 About</div>
