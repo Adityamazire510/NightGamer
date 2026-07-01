@@ -2,7 +2,7 @@
 // Paste your actual Supabase credentials here:
 
 const SUPABASE_URL = "https://hnftdcdodxdcuozlqnxl.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_ev5RGAiN9CLd1yHKMrQqWw_cXkgMC5U";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhuZnRkY2RvZHhkY3VvemxxbnhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMTQ1MjksImV4cCI6MjA5Nzg5MDUyOX0.VbCmw54fuW5pwSddsSL_laRhnBaeYqrpiUYXjRdqxQM";
 let supabase = null;
 if (typeof window.supabase !== 'undefined' && SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
   try {
