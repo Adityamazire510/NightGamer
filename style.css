@@ -3063,6 +3063,7 @@ footer {
   background: var(--bg2);
   border-left: 1px solid var(--br);
   overflow-y: auto;
+  overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: var(--br) transparent;
   animation: panelIn .4s cubic-bezier(.22, 1, .36, 1) both;
