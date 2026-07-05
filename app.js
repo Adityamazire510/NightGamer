@@ -555,7 +555,11 @@ function switchProfTab(tab) {
   const tabBtn = document.getElementById('ptab-' + tab);
   if (tabBtn) {
     tabBtn.classList.add('active');
-    tabBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    const container = document.querySelector('.prof-tabs');
+    if (container) {
+      const left = tabBtn.offsetLeft - (container.clientWidth / 2) + (tabBtn.clientWidth / 2);
+      container.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
+    }
   }
 
   // Scroll panel content to top when switching tabs
@@ -610,6 +614,13 @@ function renderProfOverview() {
       <div class="prof-stat-box" style="--psb-col:#00e5ff"><div class="prof-stat-val">${profStats.gamesOwned}</div><div class="prof-stat-lbl">Games Owned</div></div>
       <div class="prof-stat-box" style="--psb-col:#ff2d78"><div class="prof-stat-val">${profStats.ordersCount}</div><div class="prof-stat-lbl">Orders</div></div>
       <div class="prof-stat-box" style="--psb-col:#00ff88"><div class="prof-stat-val">${profStats.reviewsCount}</div><div class="prof-stat-lbl">Reviews</div></div>
+    </div>
+    <div class="prof-section" style="background:var(--surf);border:1px solid var(--br);padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.5rem;border-left:3px solid var(--a)">
+      <div>
+        <div style="font-size:.95rem;font-weight:600;color:var(--tx);margin-bottom:2px">🔑 Account Security</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:.65rem;letter-spacing:1px;color:var(--tx2)">Change password & manage security</div>
+      </div>
+      <button onclick="switchProfTab('security')" style="background:var(--a);color:#000;font-family:'Share Tech Mono',monospace;font-size:.65rem;letter-spacing:1px;font-weight:bold;padding:8px 14px;border:none;cursor:pointer;white-space:nowrap;transition:all .2s" onmouseenter="this.style.opacity='.9'" onmouseleave="this.style.opacity='1'">CHANGE PASSWORD →</button>
     </div>
     <div class="prof-section">
       <div class="prof-sec-title">👤 About</div>
@@ -679,7 +690,7 @@ function renderProfEdit() {
         <div class="pf-group"><label class="pf-label">Full Name *</label><input class="pf-input" id="pf-name" value="${profDraft.name}" oninput="profDraft.name=this.value;updateAvatarPreview()" placeholder="Your full name"></div>
         <div class="pf-group"><label class="pf-label">Phone Number</label><input class="pf-input" id="pf-phone" value="${profDraft.phone}" oninput="profDraft.phone=this.value" placeholder="+91 98765 43210"></div>
       </div>
-      <div class="pf-group"><label class="pf-label">Email Address</label><input class="pf-input" id="pf-email" value="${profDraft.email}" disabled><div class="pf-hint">Email cannot be changed. Contact support if needed.</div></div>
+      <div class="pf-group"><label class="pf-label">Email Address</label><input class="pf-input" id="pf-email" value="${profDraft.email}" disabled><div class="pf-hint" style="display:flex;align-items:center;justify-content:space-between;margin-top:6px"><span>Email cannot be changed.</span> <span onclick="switchProfTab('security')" style="color:var(--a);cursor:pointer;font-weight:bold;text-decoration:underline">🔐 Change Password →</span></div></div>
       <div class="pf-row">
         <div class="pf-group"><label class="pf-label">Date of Birth</label><input class="pf-input" id="pf-dob" type="date" value="${profDraft.dob}" oninput="profDraft.dob=this.value" style="color-scheme:dark"></div>
         <div class="pf-group"><label class="pf-label">Gender</label>

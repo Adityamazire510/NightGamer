@@ -3137,14 +3137,25 @@ footer {
   display: flex;
   border-bottom: 1px solid var(--br);
   background: var(--surf);
-  padding: 0 2rem;
+  padding: 0 1rem;
   overflow-x: auto;
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: var(--a) var(--surf);
   -webkit-overflow-scrolling: touch;
 }
 
 .prof-tabs::-webkit-scrollbar {
-  display: none;
+  height: 4px;
+  display: block;
+}
+
+.prof-tabs::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.prof-tabs::-webkit-scrollbar-thumb {
+  background: var(--a);
+  border-radius: 4px;
 }
 
 .prof-tab {
@@ -4336,13 +4347,22 @@ footer {
 
   /* Profile Modal Tabs Horizontal Scroll */
   .prof-tabs {
-    padding: 0 1rem !important;
+    padding: 0 0.5rem !important;
     overflow-x: auto !important;
     white-space: nowrap !important;
-    scrollbar-width: none !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: var(--a) var(--surf) !important;
   }
   .prof-tabs::-webkit-scrollbar {
-    display: none !important;
+    height: 4px !important;
+    display: block !important;
+  }
+  .prof-tabs::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05) !important;
+  }
+  .prof-tabs::-webkit-scrollbar-thumb {
+    background: var(--a) !important;
+    border-radius: 4px !important;
   }
   .prof-tab {
     padding: 0.75rem 0.5rem !important;
