@@ -480,12 +480,9 @@ function openProfile(tab = 'overview') {
           profStats.reviewsCount = reviewsRes.data.length;
         }
 
-        // Live update overview counts if user is currently looking at overview tab
-        const valEls = document.querySelectorAll('.prof-stat-val');
-        if (valEls.length === 3 && profTab === 'overview') {
-          valEls[0].textContent = profStats.gamesOwned;
-          valEls[1].textContent = profStats.ordersCount;
-          valEls[2].textContent = profStats.reviewsCount;
+        // Re-render the active tab to show the fresh database data!
+        if (profTab === 'overview' || profTab === 'orders') {
+          renderProfBody();
         }
       } catch (e) {
         console.error('Failed to sync profile stats:', e);

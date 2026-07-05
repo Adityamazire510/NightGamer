@@ -158,7 +158,7 @@ try {
                     $response.StatusCode = 500
                     $errBytes = [System.Text.Encoding]::UTF8.GetBytes('{"error":"' + $_.Exception.Message.Replace('"', '\"') + '"}')
                     $response.ContentLength64 = $errBytes.Length
-                    $response.OutputStream.Write($resBytes, 0, $resBytes.Length)
+                    $response.OutputStream.Write($errBytes, 0, $errBytes.Length)
                 }
                 $response.Close()
                 continue
