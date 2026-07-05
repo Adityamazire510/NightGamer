@@ -3111,7 +3111,8 @@ async function placeOrd() {
     items: cart.map(i => ({ title: i.title, price: i.price, img: i.img, genre: i.genre })),
     address: fullAddress,
     phone: orderAddress.phone,
-    paymentMethod: pml[payMethod]
+    paymentMethod: pml[payMethod],
+    createdAccount: guestAutoAccount
   };
 
   fetch('/api/send-email', {

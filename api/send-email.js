@@ -6,7 +6,7 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { email, name, orderId, grandTotal, items, address, phone, paymentMethod } = req.body;
+    const { email, name, orderId, grandTotal, items, address, phone, paymentMethod, createdAccount } = req.body;
 
     if (!email) {
       return res.status(400).json({ error: 'Recipient email is required' });
@@ -42,6 +42,21 @@ module.exports = async (req, res) => {
       `;
     }).join('');
 
+    let accountHtml = '';
+    if (createdAccount && createdAccount.email && createdAccount.password) {
+      accountHtml = `
+        <div style="background-color: #121824; border: 1px dashed #00e5ff; padding: 15px; border-radius: 6px; margin: 20px 0; text-align: left;">
+          <h3 style="color: #00e5ff; font-size: 14px; margin-top: 0; margin-bottom: 5px; font-weight: bold; text-transform: uppercase;">👤 Member Account Created</h3>
+          <p style="color: #c5cbd8; font-size: 13px; margin: 0 0 10px 0; line-height: 1.4;">Since you checked out as a guest, we have automatically created an account for you so you can track your shipment and write reviews.</p>
+          <div style="background-color: #0b0e14; padding: 12px; border-radius: 4px; border: 1px solid #1a2233; font-family: monospace; font-size: 13px;">
+            <div style="margin-bottom: 5px;"><span style="color: #8892b0;">Username (Email):</span> <span style="color: #ffffff; font-weight: bold;">${createdAccount.email}</span></div>
+            <div><span style="color: #8892b0;">Temporary Password:</span> <span style="color: #00ff88; font-weight: bold; letter-spacing: 1px;">${createdAccount.password}</span></div>
+          </div>
+          <p style="color: #8892b0; font-size: 11px; margin: 8px 0 0 0;">⚠️ Please save your password. You can change it anytime in your Profile settings after logging in.</p>
+        </div>
+      `;
+    }
+
     const htmlBody = `
       <div style="background-color: #0b0e14; color: #f0f3f8; font-family: 'Rajdhani', Arial, sans-serif; padding: 30px; max-width: 600px; margin: 0 auto; border: 1px solid #1a2233; border-radius: 8px; text-align: left;">
         <div style="text-align: center; border-bottom: 2px solid #7b2fff; padding-bottom: 20px; margin-bottom: 25px;">
@@ -68,6 +83,8 @@ module.exports = async (req, res) => {
             </tr>
           </table>
         </div>
+
+        ${accountHtml}
         
         <h3 style="color: #ffffff; font-size: 16px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #1a2233; padding-bottom: 8px;">Purchased Games</h3>
         ${itemsHtml}
