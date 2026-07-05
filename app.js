@@ -551,7 +551,16 @@ function closeProfile() {
 function switchProfTab(tab) {
   profTab = tab;
   document.querySelectorAll('.prof-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('ptab-' + tab)?.classList.add('active');
+  
+  const tabBtn = document.getElementById('ptab-' + tab);
+  if (tabBtn) {
+    tabBtn.classList.add('active');
+    tabBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
+
+  // Scroll panel content to top when switching tabs
+  document.getElementById('prof-panel')?.scrollTo({ top: 0, behavior: 'smooth' });
+
   const saveBar = document.getElementById('prof-save-bar');
   if (saveBar) {
     saveBar.style.display = (tab === 'edit' || tab === 'security' || tab === 'notifications' || tab === 'saved') ? 'flex' : 'none';
