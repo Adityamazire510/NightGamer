@@ -1711,21 +1711,441 @@ function switchAdminView(view) {
   adminViewMode = view;
   const userBtn = document.getElementById('adm-toggle-user');
   const adminBtn = document.getElementById('adm-toggle-admin');
+  const dashBtn = document.getElementById('adm-toggle-dashboard');
   const profTabs = document.querySelector('.prof-tabs');
   const saveBar = document.getElementById('prof-save-bar');
   
   if (view === 'user') {
     if (userBtn) userBtn.classList.add('active');
     if (adminBtn) adminBtn.classList.remove('active');
+    if (dashBtn) dashBtn.classList.remove('active');
     if (profTabs) profTabs.style.display = 'flex';
     switchProfTab(profTab);
-  } else {
+  } else if (view === 'admin') {
     if (userBtn) userBtn.classList.remove('active');
     if (adminBtn) adminBtn.classList.add('active');
+    if (dashBtn) dashBtn.classList.remove('active');
     if (profTabs) profTabs.style.display = 'none';
     if (saveBar) saveBar.style.display = 'none';
     renderAdminTab();
+  } else if (view === 'dashboard') {
+    if (userBtn) userBtn.classList.remove('active');
+    if (adminBtn) adminBtn.classList.remove('active');
+    if (dashBtn) dashBtn.classList.add('active');
+    if (profTabs) profTabs.style.display = 'none';
+    if (saveBar) saveBar.style.display = 'none';
+    renderAdminDashboard();
   }
+}
+
+async function renderAdminDashboard() {
+  const body = document.getElementById('prof-body');
+  if (!body) return;
+
+  body.innerHTML = `
+    <div style="text-align:center;padding:4rem 2rem;color:var(--tx2);font-family:'Share Tech Mono',monospace">
+      <div style="border:3px solid var(--br);border-top:3px solid var(--a);border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin:0 auto 1.5rem auto"></div>
+      <div style="font-size:.85rem;letter-spacing:2px;text-transform:uppercase">FETCHING ANALYTICAL DATABASE...</div>
+    </div>
+    <style>
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  `;
+
+  let orders = [];
+  let reviews = [];
+  let users = [];
+
+  if (supabase) {
+    try {
+      const [ordersRes, reviewsRes, usersRes] = await Promise.all([
+        supabase.from('orders').select('*'),
+        supabase.from('reviews').select('*'),
+        supabase.from('users').select('*')
+      ]);
+
+      if (!ordersRes.error && ordersRes.data) orders = ordersRes.data;
+      if (!reviewsRes.error && reviewsRes.data) reviews = reviewsRes.data;
+      if (!usersRes.error && usersRes.data) users = usersRes.data;
+    } catch (e) {
+      console.error('Supabase dashboard fetch error:', e);
+    }
+  }
+
+  // Fallback to local storage if empty
+  if (orders.length === 0) {
+    orders = JSON.parse(localStorage.getItem('ng_orders') || '[]');
+  }
+  if (reviews.length === 0) {
+    reviews = JSON.parse(localStorage.getItem('ng_custom_reviews') || '[]');
+  }
+  if (users.length === 0) {
+    users = JSON.parse(localStorage.getItem('nexus_users') || '[]');
+  }
+
+  // Total Sales
+  let totalRevenue = 0;
+  orders.forEach(o => {
+    totalRevenue += parseFloat(o.grand_total || o.grandTotal || 0);
+  });
+
+  // User Segmentation
+  let selfRegisterCount = 0;
+  let purchaseRegisterCount = 0;
+  let oauthRegisterCount = 0;
+
+  users.forEach(u => {
+    const idStr = String(u.id || '');
+    if (idStr.startsWith('oauth-')) {
+      oauthRegisterCount++;
+    } else if (idStr.startsWith('USR') || idStr.startsWith('guest-')) {
+      purchaseRegisterCount++;
+    } else {
+      selfRegisterCount++;
+    }
+  });
+
+  // Order status breakdown
+  let pendingOrders = 0;
+  let processingOrders = 0;
+  let completedOrders = 0;
+  let cancelledOrders = 0;
+
+  orders.forEach(o => {
+    const status = String(o.status || 'Processing').toLowerCase();
+    if (status === 'completed' || status === 'delivered') {
+      completedOrders++;
+    } else if (status === 'cancelled' || status === 'canceled') {
+      cancelledOrders++;
+    } else if (status === 'pending') {
+      pendingOrders++;
+    } else {
+      processingOrders++;
+    }
+  });
+
+  // Best Selling Games
+  const gameSalesMap = {};
+  orders.forEach(o => {
+    let itemsList = [];
+    if (o.items) {
+      itemsList = typeof o.items === 'string' ? JSON.parse(o.items) : o.items;
+    }
+    if (Array.isArray(itemsList)) {
+      itemsList.forEach(item => {
+        const title = item.title || 'Unknown Game';
+        gameSalesMap[title] = (gameSalesMap[title] || 0) + 1;
+      });
+    }
+  });
+
+  const bestSellers = Object.keys(gameSalesMap).map(title => ({
+    title,
+    count: gameSalesMap[title]
+  })).sort((a, b) => b.count - a.count).slice(0, 5);
+
+  // Wishlist Analysis
+  const aggregatedWishlistMap = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('ng_wishlist_')) {
+      try {
+        const list = JSON.parse(localStorage.getItem(key) || '[]');
+        if (Array.isArray(list)) {
+          list.forEach(gameId => {
+            const game = GAMES.find(g => String(g.id) === String(gameId));
+            if (game) {
+              aggregatedWishlistMap[game.title] = (aggregatedWishlistMap[game.title] || 0) + 1;
+            }
+          });
+        }
+      } catch (err) {}
+    }
+  }
+
+  const topWishlisted = Object.keys(aggregatedWishlistMap).map(title => ({
+    title,
+    count: aggregatedWishlistMap[title]
+  })).sort((a, b) => b.count - a.count).slice(0, 5);
+
+  // Review Analysis
+  let totalRating = 0;
+  reviews.forEach(r => {
+    totalRating += parseInt(r.rating || 0);
+  });
+  const avgRating = reviews.length > 0 ? (totalRating / reviews.length).toFixed(1) : '0.0';
+
+  body.innerHTML = `
+    <style>
+      .dash-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+      .dash-card {
+        background: var(--surf);
+        border: 1px solid var(--br);
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: left;
+        position: relative;
+        overflow: hidden;
+      }
+      .dash-card-val {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 1.4rem;
+        font-weight: bold;
+        margin-top: 5px;
+      }
+      .dash-card-lbl {
+        font-size: 0.68rem;
+        color: var(--tx2);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .dash-chart-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.25rem;
+        margin-bottom: 1.5rem;
+      }
+      @media (max-width: 768px) {
+        .dash-chart-row {
+          grid-template-columns: 1fr;
+        }
+      }
+      .dash-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        font-size: 0.8rem;
+      }
+      .dash-table th, .dash-table td {
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--br);
+      }
+      .dash-table th {
+        font-family: 'Share Tech Mono', monospace;
+        text-transform: uppercase;
+        color: var(--tx2);
+        font-size: 0.68rem;
+        letter-spacing: 1px;
+        background: rgba(255,255,255,0.02);
+      }
+      .bar-fill {
+        height: 6px;
+        border-radius: 3px;
+      }
+    </style>
+
+    <div class="prof-section" style="text-align:left">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+        <div class="prof-sec-title" style="margin:0">📊 Analytics Dashboard</div>
+        <button class="paynow" style="width:auto;padding:8px 16px;font-size:.85rem;margin:0" onclick="renderAdminDashboard()">🔄 REFRESH</button>
+      </div>
+
+      <!-- Quick Metrics -->
+      <div class="dash-grid">
+        <div class="dash-card" style="border-left: 3px solid var(--a)">
+          <div class="dash-card-lbl">Total Sales</div>
+          <div class="dash-card-val" style="color:var(--a)">₹${totalRevenue.toLocaleString()}</div>
+        </div>
+        <div class="dash-card" style="border-left: 3px solid #ff2d78">
+          <div class="dash-card-lbl">Total Orders</div>
+          <div class="dash-card-val" style="color:#ff2d78">${orders.length}</div>
+        </div>
+        <div class="dash-card" style="border-left: 3px solid #00ff88">
+          <div class="dash-card-lbl">Avg Rating</div>
+          <div class="dash-card-val" style="color:#00ff88">${avgRating} ⭐</div>
+        </div>
+        <div class="dash-card" style="border-left: 3px solid #7b2fff">
+          <div class="dash-card-lbl">Total Users</div>
+          <div class="dash-card-val" style="color:#7b2fff">${users.length}</div>
+        </div>
+      </div>
+
+      <div class="dash-chart-row">
+        <!-- User Segmentation -->
+        <div class="dash-card">
+          <div class="prof-sec-title" style="font-size:0.85rem;margin-bottom:1rem">👥 User Registrations</div>
+          <div style="display:flex;flex-direction:column;gap:0.75rem">
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:4px">
+                <span>Self Registered (Direct)</span>
+                <span style="font-weight:bold">${selfRegisterCount}</span>
+              </div>
+              <div style="background:rgba(255,255,255,0.05);border-radius:4px;height:6px;overflow:hidden">
+                <div class="bar-fill" style="width:${users.length ? (selfRegisterCount/users.length)*100 : 0}%;background:#7b2fff"></div>
+              </div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:4px">
+                <span>Purchase Auto-Created (Guest)</span>
+                <span style="font-weight:bold">${purchaseRegisterCount}</span>
+              </div>
+              <div style="background:rgba(255,255,255,0.05);border-radius:4px;height:6px;overflow:hidden">
+                <div class="bar-fill" style="width:${users.length ? (purchaseRegisterCount/users.length)*100 : 0}%;background:#ff2d78"></div>
+              </div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:4px">
+                <span>Social Accounts (OAuth)</span>
+                <span style="font-weight:bold">${oauthRegisterCount}</span>
+              </div>
+              <div style="background:rgba(255,255,255,0.05);border-radius:4px;height:6px;overflow:hidden">
+                <div class="bar-fill" style="width:${users.length ? (oauthRegisterCount/users.length)*100 : 0}%;background:#00e5ff"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Orders Breakdown -->
+        <div class="dash-card">
+          <div class="prof-sec-title" style="font-size:0.85rem;margin-bottom:1rem">📦 Order Status Breakdown</div>
+          <div style="display:flex;flex-direction:column;gap:0.75rem">
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:4px">
+                <span>Completed / Delivered</span>
+                <span style="font-weight:bold;color:#00ff88">${completedOrders}</span>
+              </div>
+              <div style="background:rgba(255,255,255,0.05);border-radius:4px;height:6px;overflow:hidden">
+                <div class="bar-fill" style="width:${orders.length ? (completedOrders/orders.length)*100 : 0}%;background:#00ff88"></div>
+              </div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:4px">
+                <span>Processing / Packing</span>
+                <span style="font-weight:bold;color:#00e5ff">${processingOrders}</span>
+              </div>
+              <div style="background:rgba(255,255,255,0.05);border-radius:4px;height:6px;overflow:hidden">
+                <div class="bar-fill" style="width:${orders.length ? (processingOrders/orders.length)*100 : 0}%;background:#00e5ff"></div>
+              </div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:4px">
+                <span>Pending Payment</span>
+                <span style="font-weight:bold;color:#ffb800">${pendingOrders}</span>
+              </div>
+              <div style="background:rgba(255,255,255,0.05);border-radius:4px;height:6px;overflow:hidden">
+                <div class="bar-fill" style="width:${orders.length ? (pendingOrders/orders.length)*100 : 0}%;background:#ffb800"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dash-chart-row">
+        <!-- Best Sellers -->
+        <div class="dash-card">
+          <div class="prof-sec-title" style="font-size:0.85rem;margin-bottom:1rem">🔥 Best Selling Games</div>
+          <table class="dash-table">
+            <thead>
+              <tr>
+                <th>Game Name</th>
+                <th style="text-align:right">Sales Count</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${bestSellers.map(b => `
+                <tr>
+                  <td>${b.title}</td>
+                  <td style="text-align:right;font-weight:bold;color:var(--a)">${b.count} CD copies</td>
+                </tr>
+              `).join('') || `<tr><td colspan="2" style="text-align:center;color:var(--tx2)">No orders placed yet</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Wishlist -->
+        <div class="dash-card">
+          <div class="prof-sec-title" style="font-size:0.85rem;margin-bottom:1rem">❤️ Most Wishlisted Games</div>
+          <table class="dash-table">
+            <thead>
+              <tr>
+                <th>Game Name</th>
+                <th style="text-align:right">Wishlists</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${topWishlisted.map(w => `
+                <tr>
+                  <td>${w.title}</td>
+                  <td style="text-align:right;font-weight:bold;color:#ff2d78">${w.count} users</td>
+                </tr>
+              `).join('') || `<tr><td colspan="2" style="text-align:center;color:var(--tx2)">No wishlist items tracked yet</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recent Orders Log -->
+      <div class="dash-card" style="margin-bottom:1.5rem">
+        <div class="prof-sec-title" style="font-size:0.85rem;margin-bottom:1rem">📋 Recent Orders (Supabase Live)</div>
+        <div style="max-height:250px;overflow-y:auto">
+          <table class="dash-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Total</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${orders.slice(-5).reverse().map(o => {
+                const buyer = o.user_name || o.user_email || 'Guest';
+                const total = o.grand_total || o.grandTotal || 0;
+                const status = o.status || 'Processing';
+                let statusCol = '#00e5ff';
+                if (status.toLowerCase().includes('completed') || status.toLowerCase().includes('delivered')) statusCol = '#00ff88';
+                if (status.toLowerCase().includes('pending')) statusCol = '#ffb800';
+                
+                return `
+                  <tr>
+                    <td style="font-family:monospace;font-size:0.75rem">${o.id}</td>
+                    <td>${buyer}</td>
+                    <td style="font-weight:bold">₹${total.toLocaleString()}</td>
+                    <td style="color:${statusCol};font-weight:bold">${status}</td>
+                  </tr>
+                `;
+              }).join('') || `<tr><td colspan="4" style="text-align:center;color:var(--tx2)">No orders found</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recent Reviews Log -->
+      <div class="dash-card">
+        <div class="prof-sec-title" style="font-size:0.85rem;margin-bottom:1rem">⭐ Recent Customer Reviews</div>
+        <div style="max-height:250px;overflow-y:auto">
+          <table class="dash-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Game</th>
+                <th>Rating</th>
+                <th>Comment</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${reviews.slice(-5).reverse().map(r => `
+                <tr>
+                  <td>${r.user_name || 'Anonymous'}</td>
+                  <td>${r.game_title || 'Unknown Game'}</td>
+                  <td style="color:#ffb800;font-weight:bold">${r.rating} ★</td>
+                  <td style="color:var(--tx2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.text || ''}">${r.text || '—'}</td>
+                </tr>
+              `).join('') || `<tr><td colspan="4" style="text-align:center;color:var(--tx2)">No reviews found</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 function renderAdminTab() {
