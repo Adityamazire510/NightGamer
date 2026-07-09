@@ -1153,7 +1153,8 @@ async function saveProfile() {
         try {
           const { data, error } = await supabase.from('users').select('pw').eq('email', currentUser.email);
           if (!error && data && data.length > 0) {
-            if (data[0].pw === btoa(curPw)) {
+            const dbPw = data[0].pw;
+            if (dbPw === curPw || dbPw === btoa(curPw)) {
               isVerified = true;
             }
           }
@@ -1163,7 +1164,7 @@ async function saveProfile() {
       } else {
         const users = JSON.parse(localStorage.getItem('nexus_users') || '[]');
         const localU = users.find(u => u.email === currentUser.email);
-        if (localU && localU.pw === btoa(curPw)) {
+        if (localU && (localU.pw === curPw || localU.pw === btoa(curPw))) {
           isVerified = true;
         }
       }
@@ -3806,9 +3807,12 @@ async function doLogin() {
   let found = null;
   if (supabase) {
     try {
-      const { data, error } = await supabase.from('users').select('*').eq('email', email).eq('pw', pw);
+      const { data, error } = await supabase.from('users').select('*').eq('email', email);
       if (!error && data && data.length > 0) {
-        found = data[0];
+        const dbUser = data[0];
+        if (dbUser.pw === pw || dbUser.pw === btoa(pw)) {
+          found = dbUser;
+        }
       }
     } catch (e) {
       console.error('Supabase login error:', e);
@@ -3817,7 +3821,7 @@ async function doLogin() {
 
   if (!found) {
     const users = JSON.parse(localStorage.getItem('nexus_users') || '[]');
-    found = users.find(u => u.email === email && u.pw === pw);
+    found = users.find(u => u.email === email && (u.pw === pw || u.pw === btoa(pw)));
   }
 
   if (!found) { showAuthErr('login-err', 'Invalid email or password. Try signing up or use a social login.'); return; }
