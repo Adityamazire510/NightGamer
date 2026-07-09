@@ -586,7 +586,7 @@ function renderProfBody() {
 
 /* ── OVERVIEW TAB ── */
 function renderProfOverview() {
-  const initials = profDraft.name.split(' ').map(n => n[0]).join('').toUpperCase();
+  const initials = (profDraft.name || '').split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase() || '?';
   const provider = currentUser.provider || 'email';
   const provMap = { google: 'Google Account', outlook: 'Microsoft Account', github: 'GitHub Account', email: 'Email & Password' };
   const joinDate = new Date(parseInt(currentUser.id.replace('oauth-', '').replace('local-', '')) || Date.now());
@@ -666,7 +666,7 @@ function renderProfOverview() {
 
 /* ── EDIT TAB ── */
 function renderProfEdit() {
-  const initials = profDraft.name.split(' ').map(n => n[0]).join('').toUpperCase();
+  const initials = (profDraft.name || '').split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase() || '?';
   const swatches = AVATAR_COLORS.map(c =>
     `<div class="cp-swatch${c === profDraft.color ? ' active' : ''}" style="background:${c}" onclick="setAvatarColor('${c}')" title="${c}"></div>`
   ).join('');
@@ -1716,22 +1716,22 @@ function switchAdminView(view) {
   const saveBar = document.getElementById('prof-save-bar');
   
   if (view === 'user') {
-    if (userBtn) userBtn.classList.add('active');
-    if (adminBtn) adminBtn.classList.remove('active');
-    if (dashBtn) dashBtn.classList.remove('active');
+    userBtn?.classList.add('active');
+    adminBtn?.classList.remove('active');
+    dashBtn?.classList.remove('active');
     if (profTabs) profTabs.style.display = 'flex';
     switchProfTab(profTab);
   } else if (view === 'admin') {
-    if (userBtn) userBtn.classList.remove('active');
-    if (adminBtn) adminBtn.classList.add('active');
-    if (dashBtn) dashBtn.classList.remove('active');
+    userBtn?.classList.remove('active');
+    adminBtn?.classList.add('active');
+    dashBtn?.classList.remove('active');
     if (profTabs) profTabs.style.display = 'none';
     if (saveBar) saveBar.style.display = 'none';
     renderAdminTab();
   } else if (view === 'dashboard') {
-    if (userBtn) userBtn.classList.remove('active');
-    if (adminBtn) adminBtn.classList.remove('active');
-    if (dashBtn) dashBtn.classList.add('active');
+    userBtn?.classList.remove('active');
+    adminBtn?.classList.remove('active');
+    dashBtn?.classList.add('active');
     if (profTabs) profTabs.style.display = 'none';
     if (saveBar) saveBar.style.display = 'none';
     renderAdminDashboard();
