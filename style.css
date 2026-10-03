@@ -4178,233 +4178,344 @@ footer {
 }
 
 /* RESPONSIVE LAYOUT */
+
+/* ─── TABLET (≤ 900px) ─── */
 @media (max-width: 900px) {
-  nav ul {
-    display: none;
+  nav ul { display: none; }
+  .hburg { display: flex; }
+  .hero-vis { display: none; }
+  .hero-c { max-width: 100%; }
+
+  .fcard { grid-template-columns: 1fr; }
+  .fimg { height: 240px; }
+  .fg2 { grid-template-columns: 1fr 1fr; }
+  .stp::after { display: none; }
+  .mi { grid-template-columns: 1fr; }
+  .mcw { height: 220px; }
+  .mcover { min-height: unset; height: 100%; }
+
+  /* Profile panel full width on tablet */
+  .prof-panel {
+    width: 100vw !important;
+    max-width: 100vw !important;
   }
-  .hburg {
-    display: flex;
-  }
-  .hero-vis {
-    display: none;
-  }
-  .hero-c {
-    max-width: 100%;
-  }
-  .fcard {
-    grid-template-columns: 1fr;
-  }
-  .fimg {
-    height: 240px;
-  }
-  .fg2 {
-    grid-template-columns: 1fr 1fr;
-  }
-  .stp::after {
-    display: none;
-  }
-  .mi {
-    grid-template-columns: 1fr;
-  }
-  .mcw {
-    height: 220px;
-  }
-  .mcover {
-    min-height: unset;
-    height: 100%;
-  }
+
+  /* Section padding reduced */
+  section { padding: 3.5rem 4vw; }
 }
 
-@media (max-width: 700px) {
-  .rev-overall {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-    text-align: center;
-  }
-  .rev-total-info {
-    text-align: center;
-  }
-}
+/* ─── LARGE PHONE (≤ 768px) ─── */
+@media (max-width: 768px) {
+  /* Navigation */
+  nav { padding: 0 4vw; height: 58px; }
+  .logo-sub { display: none; }
+  .logo-main { font-size: 1.2rem; letter-spacing: 3px; }
+  .logo-mark { width: 30px; height: 30px; }
+  .cart-btn { padding: 7px 12px; font-size: 0.68rem; letter-spacing: 1px; }
+  .nav-r { gap: 0.5rem; }
 
-@media (max-width: 600px) {
-  .sbar {
-    gap: 0;
-  }
-  .si {
-    min-width: 80px;
-    padding: .75rem .5rem;
-  }
-  .sn {
-    font-size: 1.6rem;
-  }
-  .fi {
-    padding: 1.5rem;
-  }
-  .fg2 {
-    grid-template-columns: 1fr;
-    gap: 2rem;
-  }
-  .fbot {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .stp-g {
-    grid-template-columns: 1fr 1fr;
-  }
-  .pmg {
-    grid-template-columns: 1fr 1fr;
-  }
-  .fr {
-    grid-template-columns: 1fr;
-  }
+  /* Mobile nav menu full width */
+  .mobn { padding: 1.25rem 4vw; }
+  .mobn a { font-size: 0.9rem; padding: 10px 0; }
 
-  /* Modal Mobile compatibility */
-  .modal {
-    width: 100vw;
-    height: 100vh;
-    max-height: 100vh;
-    top: 0;
-    left: 0;
-    transform: translate(0, 0) scale(1);
-    border: none;
-  }
-  .movl.open .modal {
-    transform: translate(0, 0) scale(1);
-  }
-  .mbody {
-    padding: 1.25rem;
-  }
-  .mtit {
-    font-size: 1.8rem;
-  }
-  .mmgrid {
-    grid-template-columns: 1fr;
-  }
-  .mprrow {
-    flex-wrap: wrap;
-    gap: .5rem;
-  }
-  .mpr {
-    font-size: 2rem;
-  }
-
-  /* Navigation header mobile adjustments */
-  nav {
-    padding: 0 3vw !important;
-  }
-  .logo-main {
-    font-size: 1.15rem !important;
-  }
-  .logo-mark {
-    width: 28px !important;
-    height: 28px !important;
-  }
-  .cart-btn {
-    padding: 6px 10px !important;
-    font-size: 0.65rem !important;
-    letter-spacing: 1px !important;
-  }
-  .cn {
-    top: -6px !important;
-    right: -6px !important;
-    width: 15px !important;
-    height: 15px !important;
-    font-size: 0.55rem !important;
-  }
-  .login-btn {
-    padding: 6px 10px !important;
-    font-size: 0.65rem !important;
-    letter-spacing: 1px !important;
-  }
-  .prof-btn {
-    width: 28px !important;
-    height: 28px !important;
-  }
-
-  /* Hero Section Carousel Mobile Adjustments */
+  /* Hero */
   .hero {
-    min-height: 55vh !important;
-    padding: 5rem 5vw 3rem !important;
+    min-height: 60vh;
+    padding: 5.5rem 5vw 3rem;
   }
   .hero h1 {
-    font-size: 2.2rem !important;
-    line-height: 1.0 !important;
-    margin-bottom: 1rem !important;
+    font-size: clamp(2rem, 9vw, 3rem);
+    line-height: 1.05;
+    margin-bottom: 0.9rem;
   }
   .hero p {
-    font-size: 0.88rem !important;
-    line-height: 1.5 !important;
-    margin-bottom: 1.5rem !important;
-    max-width: 100% !important;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    margin-bottom: 1.5rem;
+    max-width: 100%;
   }
-  .hcta {
-    gap: 0.5rem !important;
+  .hcta { gap: 0.5rem; flex-wrap: wrap; }
+  .bp, .bo {
+    font-size: 0.9rem;
+    padding: 11px 22px;
+    letter-spacing: 2px;
   }
-  .hcta button {
-    padding: 10px 18px !important;
-    font-size: 0.85rem !important;
-  }
+  .hero-dots { bottom: 1rem; }
 
-  /* Profile Modal Tabs Horizontal Scroll */
-  .prof-tabs {
-    padding: 0 0.5rem !important;
-    overflow-x: auto !important;
-    white-space: nowrap !important;
-    scrollbar-width: thin !important;
-    scrollbar-color: var(--a) var(--surf) !important;
-  }
-  .prof-tabs::-webkit-scrollbar {
-    height: 4px !important;
-    display: block !important;
-  }
-  .prof-tabs::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05) !important;
-  }
-  .prof-tabs::-webkit-scrollbar-thumb {
-    background: var(--a) !important;
-    border-radius: 4px !important;
-  }
-  .prof-tab {
-    padding: 0.75rem 0.5rem !important;
-    font-size: 0.6rem !important;
-    float: none !important;
-    display: inline-block !important;
-  }
+  /* Stats bar scrollable */
+  .sbar { overflow-x: auto; scrollbar-width: none; }
+  .sbar::-webkit-scrollbar { display: none; }
+  .si { min-width: 85px; padding: 0.75rem 0.6rem; }
+  .sn { font-size: 1.5rem; }
+  .slb { font-size: 0.55rem; letter-spacing: 1px; }
 
-  /* Form layouts stacking */
-  .pf-row {
-    grid-template-columns: 1fr !important;
-    gap: 0.75rem !important;
-  }
-  .prof-stats {
-    grid-template-columns: 1fr !important;
-    gap: 0.75rem !important;
-  }
-  .prof-avatar-row {
-    flex-direction: column !important;
-    text-align: center !important;
-    gap: 1rem !important;
-  }
+  /* Section layout */
+  section { padding: 3rem 4vw; }
+  .sh { margin-bottom: 1.75rem; }
+  .st { font-size: clamp(1.6rem, 5vw, 2.2rem); letter-spacing: 2px; }
 
-  /* Admin catalog dashboard adjustments */
-  .adm-game-row {
-    flex-wrap: wrap !important;
+  /* Genre grid: 2 columns */
+  .gg { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+  .gc { padding: 1.25rem 1rem; }
+  .gico { font-size: 2rem; margin-bottom: 0.5rem; }
+  .gname { font-size: 1.1rem; }
+
+  /* Game cards: 2 columns */
+  .gmg {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
   }
-  .adm-game-row > div:last-child {
-    width: 100% !important;
-    margin-top: 0.5rem !important;
-    display: flex !important;
-    justify-content: flex-end !important;
+  .ctit { font-size: 1rem; }
+  .cprice { font-size: 1.3rem; }
+  .cb { padding: 0.75rem; }
+
+  /* Featured section */
+  .fcard { grid-template-columns: 1fr; min-height: auto; }
+  .fi { padding: 2rem 1.5rem; }
+  .ftit { font-size: clamp(1.8rem, 6vw, 2.5rem); }
+  .fimg { height: 200px; }
+  .fdesc { max-width: 100%; }
+  .fpr { font-size: 2.2rem; }
+  .fg2 { grid-template-columns: 1fr; gap: 1.5rem; }
+
+  /* How it works */
+  .stp-g { grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .stp { padding: 1.25rem 0.75rem; }
+
+  /* Footer */
+  .fi { padding: 1.5rem; }
+  .fbot { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+  .fg2.footer-grid { grid-template-columns: 1fr 1fr; }
+
+  /* Reviews */
+  .rev-overall { grid-template-columns: 1fr; gap: 1.5rem; text-align: center; }
+  .rev-total-info { text-align: center; }
+
+  /* Filter bar scrollable */
+  .fbar { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; padding: 1rem 4vw; }
+  .fbar::-webkit-scrollbar { display: none; }
+  .fb { white-space: nowrap; flex-shrink: 0; padding: 5px 12px; font-size: 0.62rem; }
+
+  /* Game detail modal: full screen */
+  .modal {
+    position: fixed;
+    top: 0 !important;
+    left: 0 !important;
+    transform: none !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    border: none !important;
+    border-radius: 0 !important;
   }
+  .movl.open .modal { transform: none !important; }
+  .mcw { height: 200px !important; }
+  .mbody { padding: 1rem !important; }
+  .mtit { font-size: 1.6rem !important; }
+  .mmgrid { grid-template-columns: 1fr !important; gap: 0.5rem !important; }
+  .mprrow { flex-wrap: wrap; gap: 0.5rem; }
+  .mpr { font-size: 1.8rem !important; }
+  .madd { font-size: 1rem !important; letter-spacing: 2px !important; padding: 13px !important; }
+  .pdp-tabs { gap: 0.75rem; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+  .pdp-tabs::-webkit-scrollbar { display: none; }
+  .pdp-tab { white-space: nowrap; flex-shrink: 0; font-size: 0.75rem; }
+
+  /* Cart sidebar full width */
+  .cart-d { width: 100vw !important; right: -100vw; }
+
+  /* Payment / Checkout modal */
+  .pmod {
+    position: fixed;
+    top: 0 !important;
+    left: 0 !important;
+    transform: none !important;
+    width: 100vw !important;
+    max-height: 100vh !important;
+    height: 100vh !important;
+    border: none !important;
+    border-radius: 0 !important;
+    overflow-y: auto !important;
+  }
+  .pmovl.open .pmod { transform: none !important; }
+  .pb { padding: 1rem !important; }
+  .pmg { grid-template-columns: 1fr !important; }
+  .psteps { gap: 0; }
+  .psil { font-size: 0.48rem !important; }
+
+  /* Auth modal */
+  .auth-modal {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    min-height: 100vh !important;
+    top: 0 !important;
+    left: 0 !important;
+    transform: none !important;
+    border-radius: 0 !important;
+    border: none !important;
+  }
+  .auth-ovl.open .auth-modal { transform: none !important; }
+
+  /* Profile panel: full screen drawer */
+  .prof-panel {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    border-left: none !important;
+  }
+  .prof-header { padding: 1rem 1rem !important; }
+  .prof-header-title { font-size: 0.9rem !important; letter-spacing: 3px !important; }
+  .prof-body { padding: 0 !important; }
+  .prof-section { padding: 1.25rem 1rem !important; }
+  .prof-sec-title { font-size: 0.75rem !important; margin-bottom: 0.75rem !important; }
+  .prof-avatar-row { flex-direction: column !important; text-align: center !important; gap: 0.75rem !important; }
+  .prof-av-big { width: 64px !important; height: 64px !important; font-size: 1.5rem !important; }
+  .prof-stats { grid-template-columns: repeat(3,1fr) !important; gap: 0.5rem !important; }
+  .prof-stat-box { padding: 0.75rem 0.5rem !important; }
+  .prof-stat-val { font-size: 1.25rem !important; }
+  .prof-stat-lbl { font-size: 0.55rem !important; }
+  .pf-row { grid-template-columns: 1fr !important; gap: 0.6rem !important; }
+  .pf-input { font-size: 0.85rem !important; padding: 0.6rem 0.75rem !important; }
+  .pf-label { font-size: 0.6rem !important; }
+  .prof-save-bar { padding: 0.75rem 1rem !important; gap: 0.5rem !important; }
+  .admin-view-toggle { margin: 0.75rem 1rem !important; }
+  .adm-toggle-btn { font-size: 0.68rem !important; padding: 0.4rem 0.25rem !important; letter-spacing: 0; }
+  .prof-tabs { padding: 0 0.25rem !important; }
+  .prof-tab { font-size: 0.58rem !important; padding: 0.7rem 0.5rem !important; letter-spacing: 1px !important; }
+
+  /* Genre page hero */
+  .ghero { padding: 2.5rem 4vw 2rem; }
+  .ghtit { font-size: clamp(2.2rem, 8vw, 4rem); }
+  .ghdesc { font-size: 0.9rem; }
+  .ghstats { gap: 1rem; }
+
+  /* Toast notifications */
+  .toast { left: 1rem !important; right: 1rem !important; max-width: none !important; }
+
+  /* Dashboard analytics grid */
+  .dash-chart-row { grid-template-columns: 1fr !important; }
+  .dash-grid { grid-template-columns: 1fr 1fr !important; }
 }
 
+/* ─── SMALL PHONE (≤ 600px) ─── */
+@media (max-width: 600px) {
+  /* Nav */
+  nav { padding: 0 3vw; height: 54px; }
+  .logo-main { font-size: 1rem; letter-spacing: 2px; }
+  .logo-mark { width: 26px; height: 26px; }
+  .cart-btn { padding: 5px 8px; font-size: 0.6rem; }
+  .login-btn { padding: 5px 8px; font-size: 0.6rem; }
+  .prof-btn { width: 26px !important; height: 26px !important; }
+  .nav-r { gap: 0.35rem; }
+  .mobn { top: 54px; }
+
+  /* Hero */
+  .hero { padding: 4.5rem 4vw 2.5rem; min-height: 55vh; }
+  .hero h1 { font-size: clamp(1.8rem, 10vw, 2.4rem); }
+  .htag { font-size: 0.6rem; }
+  .bp, .bo { padding: 9px 16px; font-size: 0.8rem; }
+
+  /* Stats */
+  .si { min-width: 72px; padding: 0.6rem 0.4rem; }
+  .sn { font-size: 1.3rem; }
+  .slb { font-size: 0.48rem; letter-spacing: 0; }
+
+  /* Game cards: 2-column kept but compact */
+  .gmg { grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
+  .cb { padding: 0.6rem; }
+  .ctit { font-size: 0.88rem; }
+  .cprice { font-size: 1.1rem; }
+  .cdev { font-size: 0.72rem; }
+  .addc { padding: 6px 10px; font-size: 0.72rem; }
+  .bdg { font-size: 0.5rem; padding: 2px 7px; }
+
+  /* Genre grid: 2-column */
+  .gg { grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
+  .gc { padding: 1rem 0.75rem; }
+
+  /* How it works: 1-column */
+  .stp-g { grid-template-columns: 1fr; }
+  .stp { padding: 1rem; }
+
+  /* Featured */
+  .fimg { height: 170px; }
+  .fi { padding: 1.25rem 1rem; }
+  .fpr { font-size: 1.8rem; }
+
+  /* Sections */
+  section { padding: 2.5rem 4vw; }
+  .sh { margin-bottom: 1.25rem; gap: 0.5rem; }
+  .st { font-size: clamp(1.4rem, 6vw, 2rem); }
+
+  /* Game modal */
+  .mcw { height: 170px !important; }
+  .mtit { font-size: 1.4rem !important; }
+  .mstars { font-size: 0.85rem; }
+  .mdev { font-size: 0.8rem; }
+  .mdesc { font-size: 0.85rem; }
+  .mreqk { min-width: 70px; font-size: 0.62rem; }
+  .mreqv { font-size: 0.8rem; }
+
+  /* Profile panel */
+  .prof-stats { grid-template-columns: repeat(3,1fr) !important; }
+  .prof-stat-val { font-size: 1.1rem !important; }
+  .prof-av-big { width: 56px !important; height: 56px !important; font-size: 1.25rem !important; }
+  .prof-av-name { font-size: 1.1rem !important; }
+  .prof-av-email { font-size: 0.72rem !important; }
+  .skill-tag { font-size: 0.62rem !important; padding: 3px 8px !important; }
+
+  /* Order cards */
+  .ord-card-header { flex-direction: column !important; gap: 0.5rem !important; }
+
+  /* Payment steps */
+  .psil { display: none; }
+  .psin { width: 24px; height: 24px; font-size: 0.6rem; }
+
+  /* Cart */
+  .ci-img { width: 44px; height: 60px; }
+  .ci-t { font-size: 0.88rem; }
+  .ci-p { font-size: 1rem; }
+  .ctv { font-size: 1.6rem; }
+  .chk { font-size: 1rem; padding: 14px; letter-spacing: 2px; }
+
+  /* Misc */
+  .fbot { flex-direction: column; gap: 0.4rem; }
+  .fg2 { grid-template-columns: 1fr; gap: 1.5rem; }
+  .fr { grid-template-columns: 1fr; }
+}
+
+/* ─── EXTRA SMALL (≤ 400px) ─── */
 @media (max-width: 400px) {
-  .stp-g {
-    grid-template-columns: 1fr;
-  }
-  .gmg {
-    grid-template-columns: 1fr 1fr;
-  }
+  /* Hero even more compact */
+  .hero { padding: 4rem 4vw 2rem; }
+  .hero h1 { font-size: clamp(1.6rem, 11vw, 2rem); }
+  .htag { font-size: 0.55rem; }
+  .bp, .bo { width: 100%; text-align: center; }
+  .hcta { flex-direction: column; }
+
+  /* Single column game cards on tiny screens */
+  .gmg { grid-template-columns: 1fr; gap: 0.75rem; }
+  .gg { grid-template-columns: 1fr; }
+  .stp-g { grid-template-columns: 1fr; }
+
+  /* Nav */
+  nav { height: 52px; }
+  .logo-text { display: none; }
+  .mobn { top: 52px; }
+
+  /* Stats: horizontal scroll instead of grid */
+  .sbar { display: flex; gap: 0; }
+  .si { min-width: 70px; }
+
+  /* Profile stats keep 3 columns but very compact */
+  .prof-stat-val { font-size: 1rem !important; }
+  .prof-stat-lbl { font-size: 0.48rem !important; }
+  .prof-stat-box { padding: 0.5rem 0.25rem !important; }
+
+  /* Admin toggle buttons - stacked */
+  .admin-view-toggle { flex-direction: column; }
+
+  /* Checkout steps - minimal */
+  .psteps { gap: 0; }
+  .psin { width: 22px; height: 22px; }
 }
 
 /* ANIMATIONS */
